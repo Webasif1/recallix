@@ -115,3 +115,57 @@ export async function login(req, res) {
     },
   });
 }
+
+export async function getMe(req, res) {
+  const userId = req.user.id;
+
+  const user = await userModel.findById(userId).select("-password");
+
+  if (!user) {
+    return res.status(404).json({
+      message: "User not found",
+      success: false,
+      err: "User not Found",
+    });
+  }
+
+  res.status(200).json({
+    message: "User details fetched successfully",
+    success: true,
+    user,
+  });
+}
+
+export async function verifyEmail(req, res) {
+  const { token } = req.query;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await userModel.findOne({ email: decoded.email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid token",
+        success: false,
+        err: "User not found",
+      });
+    }
+
+    user.verified = true;
+    await user.save();
+
+    const html = `
+  <h1>Email verified successfully</h1>
+    <p>Your Email has been Verified. You can now login to your account</p>
+    <a href= "https://localhost:3000/login">Go To Login</a>
+  `;
+    return res.send(html);
+  } catch (err) {
+    return res.status(400).json({
+      message: "Invalid or expire token",
+      success: false,
+      err: err.message,
+    });
+  }
+}
