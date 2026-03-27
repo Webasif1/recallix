@@ -12,7 +12,11 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@langchain/google-genai": "^2.1.26",
+    "@langchain/mistralai": "^1.0.7",
+    "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
     "cookie": "^1.1.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.3.1",
@@ -20,6 +24,7 @@
     "express-validator": "^7.3.1",
     "json-web-token": "^3.2.0",
     "jsonwebtoken": "^9.0.3",
+    "langchain": "^1.2.37",
     "mongoose": "^9.3.2",
     "morgan": "^1.10.1",
     "nodemailer": "^8.0.4"

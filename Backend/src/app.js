@@ -1,5 +1,6 @@
 import express from "express";
 import authRouter from "./routes/auth.route.js";
+import itemRoutes from "./routes/item.route.js"
 import morgan from "morgan";
 import cookie from "cookie-parser"
 
@@ -16,5 +17,6 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRouter)
+app.use("/api/items", itemRoutes);
 
 export default app;

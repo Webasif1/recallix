@@ -107,7 +107,7 @@ export async function register(req, res) {
 export async function login(req, res) {
   const { email, password } = req.body;
 
-  const user = await userModel.findOne({ $or: [{ username }, { email }] });
+  const user = await userModel.findOne({ email }).select("+password");
   if (!user) {
     return responseMessage(res, {
       status: 400,
@@ -151,7 +151,7 @@ export async function login(req, res) {
     status: 200,
     message: "Login successfully",
     success: true,
-    user: {
+    data: {
       id: user._id,
       username: user.username,
       email: user.email,
