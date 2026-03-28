@@ -1,6 +1,8 @@
 import Item from "../models/Item.model.js";
 import { processContent, decideFolder } from "../services/ai.service.js";
 import { detectType } from "../utils/detectType.js";
+import { generateEmbedding } from "../services/embedding.service.js";
+import { cosineSimilarity } from "../utils/similarity.js";
 
 export const createItem = async (req, res) => {
   try {
@@ -16,6 +18,13 @@ export const createItem = async (req, res) => {
       aiData.title,
       aiData.tags,
     );
+    const textForEmbedding = `
+          ${aiData.title}
+          ${aiData.summary}
+          ${aiData.tags.join(" ")}
+          `;
+
+    const embedding = await generateEmbedding(textForEmbedding);
 
     const type = detectType(url);
 
@@ -25,7 +34,8 @@ export const createItem = async (req, res) => {
       tags: aiData.tags,
       collection: finalFolder,
       type: type,
-      summary: aiData.summary || "No summary available",
+      summary: aiData.summary,
+      embedding: embedding,
     });
 
     res.status(201).json(newItem);
@@ -55,6 +65,31 @@ export const searchItems = async (req, res) => {
   } catch (error) {
     console.error("Search Error:", error);
     res.status(500).json({ error: "Search failed" });
+  }
+};
+
+export const semanticSearch = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    const queryEmbedding = await generateEmbedding(query);
+
+    const items = await Item.find();
+
+    // 🔥 calculate similarity
+    const scoredItems = items.map((item) => {
+      const score = cosineSimilarity(queryEmbedding, item.embedding);
+      return { ...item.toObject(), score };
+    });
+
+    // sort by similarity
+    scoredItems.sort((a, b) => b.score - a.score);
+
+    res.json(scoredItems.slice(0, 5));
+
+  } catch (error) {
+    console.error("Semantic Search Error:", error);
+    res.status(500).json({ error: "Semantic search failed" });
   }
 };
 
