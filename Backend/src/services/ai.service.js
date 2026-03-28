@@ -31,24 +31,26 @@ export const processContent = async (url) => {
     const title = await extractTitleFromURL(url);
 
     const prompt = `
-  You are an AI that organizes saved content.
+    You are an AI that organizes saved content.
 
-  Return ONLY valid JSON:
-  {
-    "title": "clean short title",
-    "tags": ["tag1", "tag2"],
-    "folder": "folder-name"
-  }
+    Return ONLY valid JSON:
+    {
+      "title": "clean title",
+      "tags": ["tag1", "tag2"],
+      "folder": "folder-name",
+      "summary": "short 2-3 line summary"
+    }
 
-  Rules:
-  - Improve title if messy
-  - Tags = max 5, short
-  - Folder = broad category (AI, Programming, Business, Design)
+    Rules:
+    - Summary must be simple and clear
+    - Max 2-3 lines
+    - Tags max 5
+    - Folder broad category
 
-  Content:
-  Title: ${title}
-  URL: ${url}
-  `;
+    Content:
+    Title: ${title}
+    URL: ${url}
+    `;
 
     const response = await mistralModel.invoke(prompt);
 

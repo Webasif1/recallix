@@ -28,10 +28,18 @@ const itemSchema = new mongoose.Schema(
       type: String,
       default: "General",
     },
+    summary: {
+      type: String,
+      default: "",
+    },
+    embedding: {
+      type: [Number],
+      default: [],
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Item = mongoose.model("Item", itemSchema);

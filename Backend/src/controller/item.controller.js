@@ -25,6 +25,7 @@ export const createItem = async (req, res) => {
       tags: aiData.tags,
       collection: finalFolder,
       type: type,
+      summary: aiData.summary || "No summary available",
     });
 
     res.status(201).json(newItem);
@@ -57,6 +58,34 @@ export const searchItems = async (req, res) => {
   }
 };
 
+export const getItems = async (req, res) => {
+  try {
+    const items = await Item.find().sort({ createdAt: -1 });
+
+    res.json(items);
+  } catch (error) {
+    console.error("Get Items Error:", error);
+    res.status(500).json({ error: "Failed to fetch items" });
+  }
+};
+
+export const deleteItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedItem = await Item.findByIdAndDelete(id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    res.json({ message: "Item deleted successfully" });
+  } catch (error) {
+    console.error("Delete Error:", error);
+    res.status(500).json({ error: "Failed to delete item" });
+  }
+};
+
 export const getResurfacedItems = async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
@@ -67,12 +96,39 @@ export const getResurfacedItems = async (req, res) => {
     const items = await Item.find({
       createdAt: { $lte: date },
     })
-      .sort({ createdAt: 1 }) // oldest first
+      .sort({ createdAt: 1 })
       .limit(10);
 
     res.json(items);
   } catch (error) {
     console.error("Resurface Error:", error);
     res.status(500).json({ error: "Failed to resurface items" });
+  }
+};
+
+export const getRelatedItems = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const currentItem = await Item.findById(id);
+
+    if (!currentItem) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    const relatedItems = await Item.find({
+      _id: { $ne: id }, // exclude current item
+      $or: [
+        { tags: { $in: currentItem.tags } },
+        { collection: currentItem.collection },
+      ],
+    })
+      .limit(5)
+      .sort({ createdAt: -1 });
+
+    res.json(relatedItems);
+  } catch (error) {
+    console.error("Related Items Error:", error);
+    res.status(500).json({ error: "Failed to fetch related items" });
   }
 };
