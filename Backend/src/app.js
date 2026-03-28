@@ -3,6 +3,7 @@ import authRouter from "./routes/auth.route.js";
 import itemRoutes from "./routes/item.route.js"
 import morgan from "morgan";
 import cookie from "cookie-parser"
+import cors from "cors"
 
 const app = express();
 
@@ -11,6 +12,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookie());
 app.use(morgan("dev"))
+app.use(cors({
+  origin: ["chrome-extension://oanhpfjblpgdfnnfgkfjhakcchnmjhfc"], // your extension ID
+  methods: ["GET","POST","OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
 
 app.get("/", (req, res) => {
   res.send("Welcome");

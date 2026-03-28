@@ -3,6 +3,7 @@ import { processContent, decideFolder } from "../services/ai.service.js";
 import { detectType } from "../utils/detectType.js";
 import { generateEmbedding } from "../services/embedding.service.js";
 import { cosineSimilarity } from "../utils/similarity.js";
+import { responseMessage } from "../utils/responseMessage.js";
 
 export const createItem = async (req, res) => {
   try {
@@ -10,6 +11,14 @@ export const createItem = async (req, res) => {
 
     if (!url) {
       return res.status(400).json({ error: "URL is required" });
+    }
+
+    const existingItem = await Item.findOne({ url });
+
+    if (existingItem) {
+      return res.status(400).json({
+        error: "Item already saved",
+      });
     }
 
     const aiData = await processContent(url);
@@ -38,7 +47,20 @@ export const createItem = async (req, res) => {
       embedding: embedding,
     });
 
-    res.status(201).json(newItem);
+    responseMessage(res, {
+      status: 201,
+      message: "Item created successfully",
+      success: true,
+      data: {
+        url: url,
+        title: aiData.title,
+        tags: aiData.tags,
+        collection: finalFolder,
+        type: type,
+        summary: aiData.summary,
+        embedding: embedding,
+      },
+    });
   } catch (error) {
     console.error("Create Item Error:", error);
     res.status(500).json({ error: "Something went wrong" });
@@ -76,17 +98,29 @@ export const semanticSearch = async (req, res) => {
 
     const items = await Item.find();
 
-    // 🔥 calculate similarity
     const scoredItems = items.map((item) => {
       const score = cosineSimilarity(queryEmbedding, item.embedding);
       return { ...item.toObject(), score };
     });
 
-    // sort by similarity
     scoredItems.sort((a, b) => b.score - a.score);
 
-    res.json(scoredItems.slice(0, 5));
+    const formattedItems = scoredItems.slice(0, 5).map((item) => ({
+      url: item.url,
+      title: item.title,
+      tags: item.tags,
+      collection: item.collection,
+      type: item.type,
+      summary: item.summary,
+    }));
 
+    responseMessage(res, {
+      status: 201,
+      message: "Item fetch successfully",
+      success: true,
+      data: formattedItems,
+    });
+    // res.json(scoredItems.slice(0, 5));
   } catch (error) {
     console.error("Semantic Search Error:", error);
     res.status(500).json({ error: "Semantic search failed" });
@@ -96,8 +130,21 @@ export const semanticSearch = async (req, res) => {
 export const getItems = async (req, res) => {
   try {
     const items = await Item.find().sort({ createdAt: -1 });
+    const formattedItems = items.map((item) => ({
+      url: item.url,
+      title: item.title,
+      tags: item.tags,
+      collection: item.collection,
+      type: item.type,
+      summary: item.summary,
+    }));
 
-    res.json(items);
+    responseMessage(res, {
+      status: 201,
+      message: "Item fetch successfully",
+      success: true,
+      data: formattedItems,
+    });
   } catch (error) {
     console.error("Get Items Error:", error);
     res.status(500).json({ error: "Failed to fetch items" });
@@ -134,7 +181,21 @@ export const getResurfacedItems = async (req, res) => {
       .sort({ createdAt: 1 })
       .limit(10);
 
-    res.json(items);
+    const formattedItems = items.map((item) => ({
+      url: item.url,
+      title: item.title,
+      tags: item.tags,
+      collection: item.collection,
+      type: item.type,
+      summary: item.summary,
+    }));
+
+    responseMessage(res, {
+      status: 201,
+      message: "Item fetch successfully",
+      success: true,
+      data: formattedItems,
+    });
   } catch (error) {
     console.error("Resurface Error:", error);
     res.status(500).json({ error: "Failed to resurface items" });
@@ -152,7 +213,7 @@ export const getRelatedItems = async (req, res) => {
     }
 
     const relatedItems = await Item.find({
-      _id: { $ne: id }, // exclude current item
+      _id: { $ne: id },
       $or: [
         { tags: { $in: currentItem.tags } },
         { collection: currentItem.collection },

@@ -1,0 +1,50 @@
+/* General Reset */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff;
+  color: #333;
+}
+
+.container {
+  padding: 20px;
+  width: 250px;
+  text-align: center;
+}
+
+/* Heading */
+h1 {
+  color: #F45B26; /* Primary Orange */
+  margin-bottom: 10px;
+}
+
+/* Paragraph */
+p {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Button */
+button {
+  background-color: #F45B26;
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #e14e1f; /* Slightly darker orange on hover */
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Optional: Add subtle shadow */
+button {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}

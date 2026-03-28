@@ -177,7 +177,7 @@ export async function getMe(req, res) {
     status: 200,
     message: "User details fetched successfully",
     success: true,
-    user,
+    data:user,
   });
 }
 

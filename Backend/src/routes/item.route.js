@@ -12,7 +12,7 @@ import { authUser } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", authUser, createItem);
+router.post("/", createItem);
 
 router.get("/", authUser, getItems);
 router.get("/search", authUser, searchItems);

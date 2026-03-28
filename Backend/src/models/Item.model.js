@@ -4,26 +4,23 @@ const itemSchema = new mongoose.Schema(
   {
     url: {
       type: String,
-      required: true,
+      required: [true, "url is require"],
+      unique: [true, "Url must be unique"],
     },
-
     title: {
       type: String,
       default: "Untitled",
     },
-
     type: {
       type: String,
       enum: ["article", "video", "image", "pdf", "other"],
       default: "other",
     },
-
     tags: [
       {
         type: String,
       },
     ],
-
     collection: {
       type: String,
       default: "General",

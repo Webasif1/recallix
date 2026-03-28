@@ -3,11 +3,11 @@
   "name": "Recallix Saver",
   "version": "1.0",
   "description": "Save content to Recallix",
-  "permissions": ["activeTab" , "contextMenus" , "storage"],
+  "permissions": ["activeTab", "contextMenus", "storage", "scripting"],
   "action": {
     "default_popup": "popup.html"
   },
   "background": {
-  "service_worker": "background.js"
-}
+    "service_worker": "background.js"
+  }
 }
