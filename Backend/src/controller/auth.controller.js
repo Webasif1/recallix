@@ -161,6 +161,7 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
   const userId = req.user.id;
+  console.log(req.user.id)
 
   const user = await userModel.findById(userId).select("-password");
 
