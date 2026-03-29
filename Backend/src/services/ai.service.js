@@ -83,26 +83,39 @@ export const decideFolder = async (suggestedFolder, title, tags) => {
     const collections = await Item.distinct("collection");
 
     const prompt = `
-    You are an AI that organizes content into folders.
+          You are an AI that organizes content into folders.
 
-    Existing folders:
-    ${collections.join(", ") || "None"}
+          Existing folders:
+          ${collections.join(", ") || "None"}
 
-    Suggested folder: ${suggestedFolder}
-    Title: ${title}
-    Tags: ${tags.join(", ")}
+          New content:
+          Title: ${title}
+          Tags: ${tags.join(", ")}
 
-    Rules:
-    - If a similar folder exists, return that exact name
-    - If not, return a new better folder name
-    - Return ONLY folder name (no explanation)
+          Rules:
+          - ALWAYS try to reuse an existing folder if it is even slightly related
+          - DO NOT create new folder if a similar one exists
+          - Only create a new folder if absolutely necessary
+          - Keep folder names short and general (1-2 words max)
+          - Avoid specific names like "React Hooks", use broader ones like "Frontend"
+          - Output ONLY the folder name
 
-    Answer:
-    `;
+          Answer:
+          `;
 
     const response = await geminiModel.invoke(prompt);
 
-    return response.content.trim();
+    const result = response.content.trim();
+
+    const normalize = (str) => str.toLowerCase().trim();
+
+    const similarFolder = collections.find(
+      (folder) =>
+        normalize(folder).includes(normalize(result)) ||
+        normalize(result).includes(normalize(folder)),
+    );
+
+    return similarFolder || result;
   } catch (error) {
     console.error("Gemini Error:", error);
     return suggestedFolder || "General";

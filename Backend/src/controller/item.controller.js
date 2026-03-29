@@ -45,6 +45,7 @@ export const createItem = async (req, res) => {
       type: type,
       summary: aiData.summary,
       embedding: embedding,
+      user: req.user,
     });
 
     responseMessage(res, {
@@ -59,6 +60,7 @@ export const createItem = async (req, res) => {
         type: type,
         summary: aiData.summary,
         embedding: embedding,
+        user: req.user,
       },
     });
   } catch (error) {
@@ -129,7 +131,9 @@ export const semanticSearch = async (req, res) => {
 
 export const getItems = async (req, res) => {
   try {
-    const items = await Item.find().sort({ createdAt: -1 });
+    const items = await Item.find({ user: req.user }).sort({
+      createdAt: -1,
+    });
     const formattedItems = items.map((item) => ({
       url: item.url,
       title: item.title,
