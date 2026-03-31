@@ -37,7 +37,7 @@ const Register = () => {
           </p>
 
           <p className="text-sm text-cyan-400 font-medium break-all">
-            {user.email}
+            {email}
           </p>
 
         </div>
@@ -48,7 +48,6 @@ const Register = () => {
   if (!loading && user && user.verified) {
     return <Navigate to="/" />
   }
-  console.log(user)
 
   return (
     <RegisterComponents handleSubmit={handleSubmit} username={username} email={email} password={password} setUsername={setUsername} setEmail={setEmail} setPassword={setPassword} />
