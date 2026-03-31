@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../hook/useAuth'
 import { useSelector } from 'react-redux'
-import { useNavigate, Navigate, Link } from 'react-router'
+import { useNavigate, Navigate } from 'react-router'
 import LoginComponent from '../components/LoginComponent'
 
 const Login = () => {
@@ -22,9 +22,8 @@ const Login = () => {
 
     await handleLogin(payLoad)
     navigate("/")
-    console.log(user)
   }
-  // console.log(user)
+  console.log(user)
 
   if (!loading && user) {
     return <Navigate to='/' />
