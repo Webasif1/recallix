@@ -6,9 +6,9 @@ import { cosineSimilarity } from "../utils/similarity.js";
 import { responseMessage } from "../utils/responseMessage.js";
 
 export const createItem = async (req, res) => {
+  console.log(req.user)
   try {
     const { url } = req.body;
-
     if (!url) {
       return res.status(400).json({ error: "URL is required" });
     }
@@ -39,29 +39,20 @@ export const createItem = async (req, res) => {
 
     const newItem = await Item.create({
       url,
+      user: req.user,
       title: aiData.title,
       tags: aiData.tags,
       collection: finalFolder,
       type: type,
       summary: aiData.summary,
       embedding: embedding,
-      user: req.user,
     });
 
     responseMessage(res, {
       status: 201,
       message: "Item created successfully",
       success: true,
-      data: {
-        url: url,
-        title: aiData.title,
-        tags: aiData.tags,
-        collection: finalFolder,
-        type: type,
-        summary: aiData.summary,
-        embedding: embedding,
-        user: req.user,
-      },
+      data: newItem,
     });
   } catch (error) {
     console.error("Create Item Error:", error);

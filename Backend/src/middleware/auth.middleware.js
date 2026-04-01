@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { decode } from "jsonwebtoken";
 import { responseMessage } from "../utils/responseMessage.js";
 
 export async function authUser(req, res, next) {

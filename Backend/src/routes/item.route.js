@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.post("/", createItem);
 
-router.get("/", authUser, getItems);
+router.get("/", getItems);
 router.get("/search", authUser, searchItems);
 router.get("/semantic-search", authUser, semanticSearch);
 router.get("/resurface", authUser, getResurfacedItems);
