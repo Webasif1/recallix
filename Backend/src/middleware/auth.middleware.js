@@ -1,4 +1,4 @@
-import jwt, { decode } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { responseMessage } from "../utils/responseMessage.js";
 
 export async function authUser(req, res, next) {
@@ -16,6 +16,7 @@ export async function authUser(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    console.log(decoded)
     next();
   } catch (err) {
     return responseMessage(res, {

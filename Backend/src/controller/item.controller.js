@@ -6,7 +6,6 @@ import { cosineSimilarity } from "../utils/similarity.js";
 import { responseMessage } from "../utils/responseMessage.js";
 
 export const createItem = async (req, res) => {
-  console.log(req.user)
   try {
     const { url } = req.body;
     if (!url) {
@@ -39,7 +38,7 @@ export const createItem = async (req, res) => {
 
     const newItem = await Item.create({
       url,
-      user: req.user,
+      user: req.user.id,
       title: aiData.title,
       tags: aiData.tags,
       collection: finalFolder,
@@ -52,7 +51,15 @@ export const createItem = async (req, res) => {
       status: 201,
       message: "Item created successfully",
       success: true,
-      data: newItem,
+      data: {
+      url,
+      user: req.user.id,
+      title: aiData.title,
+      tags: aiData.tags,
+      collection: finalFolder,
+      type: type,
+      summary: aiData.summary,
+    },
     });
   } catch (error) {
     console.error("Create Item Error:", error);
@@ -122,7 +129,7 @@ export const semanticSearch = async (req, res) => {
 
 export const getItems = async (req, res) => {
   try {
-    const items = await Item.find({ user: req.user }).sort({
+    const items = await Item.find({ user: req.user.id }).sort({
       createdAt: -1,
     });
     const formattedItems = items.map((item) => ({
