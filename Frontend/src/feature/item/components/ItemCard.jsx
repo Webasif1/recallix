@@ -11,7 +11,6 @@ export default function ItemCard({ item }) {
   return (
     <div className="bg-zinc-900 p-4 rounded-lg shadow relative">
 
-      {/* ❌ Delete button */}
       <button
         onClick={handleDelete}
         className="absolute top-2 right-2 text-red-500"
