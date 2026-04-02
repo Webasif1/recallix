@@ -51,15 +51,7 @@ export const createItem = async (req, res) => {
       status: 201,
       message: "Item created successfully",
       success: true,
-      data: {
-      url,
-      user: req.user.id,
-      title: aiData.title,
-      tags: aiData.tags,
-      collection: finalFolder,
-      type: type,
-      summary: aiData.summary,
-    },
+      data: newItem,
     });
   } catch (error) {
     console.error("Create Item Error:", error);
@@ -132,20 +124,12 @@ export const getItems = async (req, res) => {
     const items = await Item.find({ user: req.user.id }).sort({
       createdAt: -1,
     });
-    const formattedItems = items.map((item) => ({
-      url: item.url,
-      title: item.title,
-      tags: item.tags,
-      collection: item.collection,
-      type: item.type,
-      summary: item.summary,
-    }));
 
     responseMessage(res, {
       status: 201,
       message: "Item fetch successfully",
       success: true,
-      data: formattedItems,
+      data: items,
     });
   } catch (error) {
     console.error("Get Items Error:", error);

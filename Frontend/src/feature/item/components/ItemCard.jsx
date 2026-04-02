@@ -6,6 +6,7 @@ export default function ItemCard({ item }) {
 
   const handleDelete = () => {
     dispatch(deleteItem(item._id));
+    console.log(item._id)
   };
 
   return (

@@ -19,7 +19,7 @@ app.use(
       "http://localhost:5173",
     ], // your extension ID
     credentials: true,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST",, "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );

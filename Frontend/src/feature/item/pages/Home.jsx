@@ -7,7 +7,6 @@ import ItemCard from "../components/ItemCard";
 export default function Home() {
   const dispatch = useDispatch();
   const { items, loading } = useSelector((state) => state.items);
-  console.log(items)
 
   useEffect(() => {
     dispatch(fetchItems());
@@ -22,8 +21,8 @@ export default function Home() {
       {loading && <p className="p-4">Loading...</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        {items.map((item,idx) => (
-          <ItemCard key={idx} item={item} />
+        {items.map((item) => (
+          <ItemCard key={item._id} item={item} />
         ))}
       </div>
     </div>

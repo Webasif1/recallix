@@ -16,7 +16,7 @@ export const fetchItems = createAsyncThunk(
   },
 );
 
-// ➕ Add Item
+//  Add Item
 export const addItem = createAsyncThunk(
   "items/add",
   async (url, { getState }) => {
@@ -27,6 +27,7 @@ export const addItem = createAsyncThunk(
   },
 );
 
+//delete item
 export const deleteItem = createAsyncThunk(
   "items/delete",
   async (id, { getState }) => {
@@ -34,7 +35,7 @@ export const deleteItem = createAsyncThunk(
 
     await deleteItemAPI(id, token);
 
-    return id; // 🔥 return id to update UI
+    return id;
   },
 );
 
@@ -55,12 +56,9 @@ const itemSlice = createSlice({
         state.items = action.payload.data;
       })
 
-      // ➕ Add
       .addCase(addItem.fulfilled, (state, action) => {
-        // 🔥 if duplicate response
-        if (action.payload.item) return;
-
-        state.items.unshift(action.payload);
+        if (!action.payload?.data) return;
+        state.items.unshift(action.payload.data);
       })
       .addCase(deleteItem.fulfilled, (state, action) => {
         state.items = state.items.filter((item) => item._id !== action.payload);
