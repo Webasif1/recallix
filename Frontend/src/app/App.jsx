@@ -5,6 +5,8 @@ import { useAuth } from '../feature/auth/hook/useAuth'
 
 const App = () => {
   const auth = useAuth()
+
+
   useEffect(()=>{
     auth.handleGetMe()
   },[])

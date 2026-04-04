@@ -21,12 +21,11 @@ const Login = () => {
     }
 
     await handleLogin(payLoad)
-    navigate("/")
+    navigate("/dashboard")
   }
-  console.log(user)
 
   if (!loading && user) {
-    return <Navigate to='/' />
+    return <Navigate to='/dashboard' />
   }
   return (
     <LoginComponent handleSubmit={handleSubmit} email={email} password={password} setEmail={setEmail} setPassword={setPassword} />
