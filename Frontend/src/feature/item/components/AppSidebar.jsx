@@ -1,6 +1,8 @@
 // src/feature/item/components/AppSidebar.jsx (or src/components/AppSidebar.jsx)
 import { useState } from 'react';
-import { useSelector } from 'react-redux';  // ✅ only useSelector, no useDispatch
+import { useSelector } from 'react-redux';
+import { useAuth } from '../../auth/hook/useAuth';
+import { useNavigate } from 'react-router';
 import {
   Home,
   Search,
@@ -8,7 +10,7 @@ import {
   FolderOpen,
   Network,
   Clock,
-  Settings,
+  LogOut,
   Plus,
   ChevronDown,
   ChevronRight,
@@ -29,8 +31,10 @@ const navItems = [
 const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
   const [collectionsOpen, setCollectionsOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { items } = useSelector((state) => state.items);  // ✅ only useSelector
+  const { items } = useSelector((state) => state.items);
   const itemsArray = Array.isArray(items) ? items : [];
+  const { handleLogout } = useAuth()
+  const navigate = useNavigate()
 
   // Rest of the component remains the same...
   const collectionMap = itemsArray.reduce((acc, item) => {
@@ -50,6 +54,17 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
   const handleCollectionClick = (collectionName) => {
     onViewChange(`collection-${collectionName}`);
     setMobileOpen(false);
+  };
+
+  const handleLogoutClick = async () => {
+    try {
+      await handleLogout();
+
+      // redirect after logout
+      navigate("/");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   };
 
   const sidebarContent = (
@@ -82,11 +97,10 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive
                     ? 'bg-gray-800 text-white'
                     : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {item.label}
@@ -117,11 +131,10 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
                   <button
                     key={col.name}
                     onClick={() => handleCollectionClick(col.name)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      isColActive
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isColActive
                         ? 'bg-gray-800 text-white'
                         : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                    }`}
+                      }`}
                   >
                     <span className="text-base">📁</span>
                     <span className="truncate flex-1 text-left">{col.name}</span>
@@ -138,9 +151,12 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
       </nav>
 
       <div className="p-3 border-t border-gray-800">
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-800/50 hover:text-white transition-colors">
-          <Settings className="w-4 h-4" />
-          Settings
+        <button
+          onClick={handleLogoutClick}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
         </button>
       </div>
     </>
