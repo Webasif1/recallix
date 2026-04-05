@@ -145,18 +145,6 @@ if (loading) return <Loading message="Loading your knowledge base..." />;
               )}
             </div>
           </div>
-
-          {/* Knowledge Graph teaser */}
-          <Link to="/graph" className="block bg-gray-800/30 rounded-xl p-4 border border-gray-700 hover:border-[#F45B26]/30 transition-all group">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-[#F45B26] group-hover:scale-110 transition-transform" />
-                <span className="font-medium text-white">Explore Knowledge Graph</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#F45B26] transition-colors" />
-            </div>
-            <p className="text-xs text-gray-400 mt-1">Visualize connections between your saved items</p>
-          </Link>
         </div>
       </div>
     </div>

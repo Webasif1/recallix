@@ -3,7 +3,7 @@ import Login from "../feature/auth/pages/Login";
 import Register from "../feature/auth/pages/Register";
 import Protected from "../feature/auth/components/Protected";
 import PublicRoute from "../feature/auth/components/PublicRoute";
-import Home from "../feature/item/pages/Home";
+import Home from "./Pages/Home";
 import Dashboard from "../feature/item/pages/Dashboard"
 import NoteFound from "../feature/item/pages/NotFound"
 import { Navigate } from "react-router-dom";

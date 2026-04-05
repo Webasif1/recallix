@@ -59,13 +59,10 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-            Your second brain,
-            <span className="block text-[#F45B26]">supercharged</span>
+          <h1 className="text-4xl sm:text-5xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+            Save everything,
+            <span className="block text-[#F45B26]">Forget nothing</span>
           </h1>
-          <p className="text-xl text-gray-300 mb-4">
-            Save everything. Forget nothing.
-          </p>
           <p className="text-gray-400 max-w-2xl mx-auto mb-8">
             Recallix automatically organizes, connects, and resurfaces your saved content —
             so the right knowledge finds you at the right time.
