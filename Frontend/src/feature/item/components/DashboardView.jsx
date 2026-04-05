@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import {
   Database, FolderKanban, Hash, Sparkles,
   Clock, BookOpen, ChevronRight, Lightbulb,
-  TrendingUp, Trash2, ExternalLink  // ← add ExternalLink
+  TrendingUp, Trash2, ExternalLink
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Loading from './Loading';
@@ -30,6 +30,7 @@ const DashboardView = () => {
 
   if (loading) return <Loading message="Loading your knowledge base..." />;
 
+  // Stats
   const totalSaved = itemsArray.length;
   const collections = [...new Set(itemsArray.map(i => i.collection).filter(Boolean))];
   const allTags = itemsArray.flatMap(i => i.tags || []);
@@ -40,8 +41,9 @@ const DashboardView = () => {
   }, {});
   const topTags = Object.entries(tagCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
-  const resurfacedMemories = itemsArray.slice(0, 3);
-  const recentSaves = itemsArray.slice(3, 6);
+  // Slice logic: recent = first 3, resurfaced = next 3 (if any)
+  const recentSaves = itemsArray.slice(0, 3);
+  const resurfacedMemories = itemsArray.slice(3, 6);
   const aiSuggestions = topTags.slice(0, 3).map(([tag]) => tag);
 
   const getTimeAgo = (dateString) => {
@@ -58,12 +60,12 @@ const DashboardView = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* ... (header and stats remain the same) ... */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-white">Dashboard</h1>
         <p className="text-gray-400 mt-1">Your knowledge base overview</p>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={<Database className="w-5 h-5" />} label="Total Saved" value={totalSaved} color="text-[#F45B26]" />
         <StatCard icon={<FolderKanban className="w-5 h-5" />} label="Collections" value={collections.length} color="text-blue-400" />
@@ -88,7 +90,9 @@ const DashboardView = () => {
               />
             ))}
             {resurfacedMemories.length === 0 && (
-              <div className="p-4 text-center text-gray-500 text-sm">No memories yet. Start saving!</div>
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No resurfaced memories yet. Add more items.
+              </div>
             )}
           </div>
         </div>
@@ -104,12 +108,14 @@ const DashboardView = () => {
               <RecentSaveCard key={item._id} item={item} onDelete={() => handleDelete(item._id, item.title)} />
             ))}
             {recentSaves.length === 0 && (
-              <div className="p-4 text-center text-gray-500 text-sm">No recent saves.</div>
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No recent saves. Start adding URLs!
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right Column: Top Tags & AI Suggestions (unchanged) */}
+        {/* Right Column: Top Tags & AI Suggestions */}
         <div className="space-y-6">
           <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
@@ -142,13 +148,25 @@ const DashboardView = () => {
               )}
             </div>
           </div>
+
+          {/* Knowledge Graph teaser */}
+          <Link to="/graph" className="block bg-gray-800/30 rounded-xl p-4 border border-gray-700 hover:border-[#F45B26]/30 transition-all group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#F45B26] group-hover:scale-110 transition-transform" />
+                <span className="font-medium text-white">Explore Knowledge Graph</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#F45B26] transition-colors" />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Visualize connections between your saved items</p>
+          </Link>
         </div>
       </div>
     </div>
   );
 };
 
-// StatCard remains unchanged
+// ---------- Helper Components ----------
 const StatCard = ({ icon, label, value, color }) => (
   <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-800 hover:border-[#F45B26]/30 transition-all">
     <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
@@ -159,7 +177,6 @@ const StatCard = ({ icon, label, value, color }) => (
   </div>
 );
 
-// Updated MemoryCard with View button
 const MemoryCard = ({ item, timeAgo, onDelete }) => (
   <div className="p-4 hover:bg-gray-800/50 transition-colors group relative">
     <div className="flex justify-between items-start">
@@ -175,7 +192,7 @@ const MemoryCard = ({ item, timeAgo, onDelete }) => (
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-[#F45B26] transition-colors absolute bottom-4 right-4"
+              className="text-gray-400 hover:text-[#F45B26] transition-colors absolute top-10 right-5"
               onClick={(e) => e.stopPropagation()}
               title="View original"
             >
@@ -188,7 +205,7 @@ const MemoryCard = ({ item, timeAgo, onDelete }) => (
         <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
         <button
           onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10"
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 md:absolute bottom-2 right-4"
           title="Delete"
         >
           <Trash2 className="w-4 h-4" />
@@ -198,7 +215,6 @@ const MemoryCard = ({ item, timeAgo, onDelete }) => (
   </div>
 );
 
-// Updated RecentSaveCard with View button
 const RecentSaveCard = ({ item, onDelete }) => (
   <div className="p-4 hover:bg-gray-800/50 transition-colors group relative">
     <div className="flex justify-between items-start">
@@ -215,7 +231,7 @@ const RecentSaveCard = ({ item, onDelete }) => (
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-[#F45B26] transition-colors absolute top-3 right-3"
+              className="text-gray-400 hover:text-[#F45B26] transition-colors absolute top-5 right-5"
               onClick={(e) => e.stopPropagation()}
               title="View original"
             >
@@ -226,7 +242,7 @@ const RecentSaveCard = ({ item, onDelete }) => (
       </div>
       <button
         onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 absolute bottom-2 right-4"
         title="Delete"
       >
         <Trash2 className="w-4 h-4" />
