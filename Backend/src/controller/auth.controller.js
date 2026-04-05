@@ -21,6 +21,17 @@ export async function register(req, res) {
 
   const user = await userModel.create({ username, email, password });
 
+    const token = jwt.sign(
+    {
+      id: user._id,
+      username: user.username,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" },
+  );
+
+  res.cookie("token", token);
+
   responseMessage(res, {
     status: 200,
     message: "User has been created successfully",
@@ -28,7 +39,6 @@ export async function register(req, res) {
       id: user._id,
       username: user.username,
       email: user.email,
-      verified: user.verified
     },
   });
 }
@@ -56,14 +66,6 @@ export async function login(req, res) {
     });
   }
 
-  if (!user.verified) {
-    return responseMessage(res, {
-      status: 400,
-      message: "Please verify your email before login",
-      success: false,
-      error: "Email not verified",
-    });
-  }
 
   const token = jwt.sign(
     {
@@ -84,7 +86,6 @@ export async function login(req, res) {
       id: user._id,
       username: user.username,
       email: user.email,
-      verified: user.verified
     },
   });
 }

@@ -20,10 +20,6 @@ const userSchema = new mongoose.Schema(
       require: [true, "Password is require"],
       select: false,
     },
-    verified: {
-      type: Boolean,
-      default: false,
-    },
     bio: {
       type: String,
       default: "",
