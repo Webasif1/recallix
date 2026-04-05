@@ -2,9 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchItems, deleteItem } from '../item.slice';
-import { Search, X, Trash2 } from 'lucide-react';
+import { Search, X, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import Loading from './Loading';
 
 const AllSavedView = () => {
   const dispatch = useDispatch();
@@ -12,8 +11,6 @@ const AllSavedView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtered, setFiltered] = useState([]);
   const itemsArray = Array.isArray(items) ? items : [];
-
-
 
   useEffect(() => {
     dispatch(fetchItems());
@@ -32,10 +29,6 @@ const AllSavedView = () => {
       ));
     }
   }, [searchTerm, itemsArray]);
-
-
-  // Inside the component:
-  if (loading) return <Loading message="Fetching your saved items..." />;
 
   const handleDelete = (id, title) => {
     if (window.confirm(`Delete "${title}"?`)) {
@@ -78,7 +71,7 @@ const AllSavedView = () => {
             <div key={item._id} className="bg-gray-900/50 rounded-xl p-4 border border-gray-800 hover:border-[#F45B26]/30 transition-all duration-300 group relative">
               <button
                 onClick={() => handleDelete(item._id, item.title)}
-                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
+                className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
                 title="Delete"
               >
                 <Trash2 className="w-4 h-4" />
@@ -88,12 +81,26 @@ const AllSavedView = () => {
                 {item.collection || 'Uncategorized'}
               </p>
               <p className="text-sm text-gray-300 mt-2 line-clamp-3">{item.summary}</p>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {item.tags?.slice(0, 3).map(tag => (
-                  <span key={tag} className="text-xs px-2 py-1 bg-gray-800 rounded-full text-gray-300">
-                    #{tag}
-                  </span>
-                ))}
+              <div className="flex justify-between items-center mt-3">
+                <div className="flex flex-wrap gap-2">
+                  {item.tags?.slice(0, 3).map(tag => (
+                    <span key={tag} className="text-xs px-2 py-1 bg-gray-800 rounded-full text-gray-300">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+                {item.url && (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className=" p-1.5 text-gray-400 hover:text-[#F45B26] transition-colors rounded-md hover:bg-gray-800 absolute top-3 right-3"
+                    title="Open original"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
               </div>
             </div>
           ))}

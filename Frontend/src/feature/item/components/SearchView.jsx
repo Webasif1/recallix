@@ -1,8 +1,9 @@
-// components/SearchView.jsx
+// src/components/SearchView.jsx
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchItems } from '../item.slice';
-import { Search } from 'lucide-react';
+import { fetchItems, deleteItem } from '../item.slice';
+import { Search, X, Trash2, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SearchView = () => {
   const dispatch = useDispatch();
@@ -29,6 +30,14 @@ const SearchView = () => {
     }
   }, [query, itemsArray]);
 
+  const handleDelete = (id, title) => {
+    if (window.confirm(`Delete "${title}"?`)) {
+      dispatch(deleteItem(id)).unwrap()
+        .then(() => toast.success('Deleted', { description: title }))
+        .catch((err) => toast.error('Failed to delete', { description: err.message }));
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
@@ -53,12 +62,34 @@ const SearchView = () => {
       ) : (
         <div className="space-y-4">
           {results.map(item => (
-            <div key={item._id} className="bg-gray-900/50 rounded-xl p-4 border border-gray-800">
-              <h3 className="font-semibold text-white">{item.title}</h3>
-              <p className="text-xs text-[#F45B26] mt-1 uppercase">{item.collection || 'Uncategorized'}</p>
-              <p className="text-sm text-gray-300 mt-2 line-clamp-2">{item.summary}</p>
-              <div className="flex gap-2 mt-2 flex-wrap">
-                {item.tags?.map(tag => <span key={tag} className="text-xs px-2 py-1 bg-gray-800 rounded-full text-gray-300">#{tag}</span>)}
+            <div key={item._id} className="bg-gray-900/50 rounded-xl p-4 border border-gray-800 hover:border-[#F45B26]/30 transition-all group relative">
+              <button
+                onClick={() => handleDelete(item._id, item.title)}
+                className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <div className="pr-12">
+                <h3 className="font-semibold text-white">{item.title}</h3>
+                <p className="text-xs text-[#F45B26] mt-1 uppercase">{item.collection || 'Uncategorized'}</p>
+                <p className="text-sm text-gray-300 mt-2 line-clamp-2">{item.summary}</p>
+                <div className="flex justify-between items-center mt-3">
+                  <div className="flex gap-2 flex-wrap">
+                    {item.tags?.map(tag => <span key={tag} className="text-xs px-2 py-1 bg-gray-800 rounded-full text-gray-300">#{tag}</span>)}
+                  </div>
+                  {item.url && (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 text-gray-400 hover:text-[#F45B26] transition-colors rounded-md hover:bg-gray-800 absolute top-3 right-3"
+                      title="Open original"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           ))}

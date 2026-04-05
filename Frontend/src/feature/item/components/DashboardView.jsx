@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import {
   Database, FolderKanban, Hash, Sparkles,
   Clock, BookOpen, ChevronRight, Lightbulb,
-  TrendingUp, Trash2
+  TrendingUp, Trash2, ExternalLink  // ← add ExternalLink
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Loading from './Loading';
@@ -28,9 +28,8 @@ const DashboardView = () => {
     }
   };
 
-    // At the top of the component, before rendering stats:
-if (loading) return <Loading message="Loading your knowledge base..." />;
-  // Stats (unchanged)
+  if (loading) return <Loading message="Loading your knowledge base..." />;
+
   const totalSaved = itemsArray.length;
   const collections = [...new Set(itemsArray.map(i => i.collection).filter(Boolean))];
   const allTags = itemsArray.flatMap(i => i.tags || []);
@@ -59,12 +58,12 @@ if (loading) return <Loading message="Loading your knowledge base..." />;
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* ... (header and stats remain the same) ... */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-white">Dashboard</h1>
         <p className="text-gray-400 mt-1">Your knowledge base overview</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={<Database className="w-5 h-5" />} label="Total Saved" value={totalSaved} color="text-[#F45B26]" />
         <StatCard icon={<FolderKanban className="w-5 h-5" />} label="Collections" value={collections.length} color="text-blue-400" />
@@ -110,9 +109,8 @@ if (loading) return <Loading message="Loading your knowledge base..." />;
           </div>
         </div>
 
-        {/* Right Column: Top Tags & AI Suggestions */}
+        {/* Right Column: Top Tags & AI Suggestions (unchanged) */}
         <div className="space-y-6">
-          {/* Top Tags */}
           <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
               <Hash className="w-4 h-4 text-[#F45B26]" />
@@ -128,7 +126,6 @@ if (loading) return <Loading message="Loading your knowledge base..." />;
             </div>
           </div>
 
-          {/* AI Suggestions */}
           <div className="bg-gradient-to-r from-[#F45B26]/10 to-transparent rounded-xl border border-[#F45B26]/20 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Lightbulb className="w-5 h-5 text-[#F45B26]" />
@@ -151,7 +148,7 @@ if (loading) return <Loading message="Loading your knowledge base..." />;
   );
 };
 
-// Helper Components with Delete Buttons
+// StatCard remains unchanged
 const StatCard = ({ icon, label, value, color }) => (
   <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-800 hover:border-[#F45B26]/30 transition-all">
     <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
@@ -162,14 +159,29 @@ const StatCard = ({ icon, label, value, color }) => (
   </div>
 );
 
+// Updated MemoryCard with View button
 const MemoryCard = ({ item, timeAgo, onDelete }) => (
   <div className="p-4 hover:bg-gray-800/50 transition-colors group relative">
     <div className="flex justify-between items-start">
       <div className="flex-1 pr-8">
         <h4 className="font-medium text-sm text-white line-clamp-1">{item.title}</h4>
         <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.summary}</p>
-        <div className="flex gap-2 mt-2 flex-wrap">
-          {item.tags?.slice(0, 2).map(t => <span key={t} className="text-xs text-[#F45B26]">#{t}</span>)}
+        <div className="flex items-center justify-between mt-2">
+          <div className="flex gap-2 flex-wrap">
+            {item.tags?.slice(0, 2).map(t => <span key={t} className="text-xs text-[#F45B26]">#{t}</span>)}
+          </div>
+          {item.url && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-[#F45B26] transition-colors absolute bottom-4 right-4"
+              onClick={(e) => e.stopPropagation()}
+              title="View original"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
         </div>
       </div>
       <div className="flex flex-col items-end gap-2">
@@ -186,15 +198,30 @@ const MemoryCard = ({ item, timeAgo, onDelete }) => (
   </div>
 );
 
+// Updated RecentSaveCard with View button
 const RecentSaveCard = ({ item, onDelete }) => (
   <div className="p-4 hover:bg-gray-800/50 transition-colors group relative">
     <div className="flex justify-between items-start">
       <div className="flex-1 pr-8">
         <h4 className="font-medium text-sm text-white line-clamp-1">{item.title}</h4>
-        <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-          <span className="text-[#F45B26]">{item.collection || 'Uncategorized'}</span>
-          <span>•</span>
-          <span>{item.tags?.[0] || 'no tags'}</span>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <span className="text-[#F45B26]">{item.collection || 'Uncategorized'}</span>
+            <span>•</span>
+            <span>{item.tags?.[0] || 'no tags'}</span>
+          </div>
+          {item.url && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-[#F45B26] transition-colors absolute top-3 right-3"
+              onClick={(e) => e.stopPropagation()}
+              title="View original"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
         </div>
       </div>
       <button
