@@ -1,6 +1,6 @@
 import userModel from "../models/user_model.js";
 import { responseMessage } from "../utils/responseMessage.js";
-import redis from "../config/cache.js"
+import redis from "../config/cache.js";
 import jwt from "jsonwebtoken";
 
 export async function register(req, res) {
@@ -21,7 +21,7 @@ export async function register(req, res) {
 
   const user = await userModel.create({ username, email, password });
 
-    const token = jwt.sign(
+  const token = jwt.sign(
     {
       id: user._id,
       username: user.username,
@@ -31,11 +31,11 @@ export async function register(req, res) {
   );
 
   res.cookie("token", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
   responseMessage(res, {
     status: 200,
@@ -71,7 +71,6 @@ export async function login(req, res) {
     });
   }
 
-
   const token = jwt.sign(
     {
       id: user._id,
@@ -82,12 +81,12 @@ export async function login(req, res) {
   );
 
   res.cookie("token", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-});
-
+    domain: "https://recallix.onrender.com/",
+    httpOnly: false,
+    secure: true,
+    sameSite: "None",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
   responseMessage(res, {
     status: 200,
@@ -103,7 +102,7 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
   const userId = req.user.id;
-  console.log(req.user.id)
+  console.log(req.user.id);
 
   const user = await userModel.findById(userId).select("-password");
 
@@ -120,7 +119,7 @@ export async function getMe(req, res) {
     status: 200,
     message: "User details fetched successfully",
     success: true,
-    data:user,
+    data: user,
   });
 }
 
@@ -128,10 +127,10 @@ export async function logout(req, res) {
   const token = req.cookies.token;
 
   res.clearCookie("token", {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
-});
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+  });
 
   //** use mongoose to store data
   // await blacklistModel.create({
@@ -139,8 +138,7 @@ export async function logout(req, res) {
   // });
 
   //**use redis to store data */
-  await redis.set(token,Date.now().toString(), "EX", 60 * 60)
-
+  await redis.set(token, Date.now().toString(), "EX", 60 * 60);
 
   res.status(200).json({
     message: "logout successfully.",
