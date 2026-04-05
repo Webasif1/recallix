@@ -88,6 +88,7 @@ export async function login(req, res) {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
+
   responseMessage(res, {
     status: 200,
     message: "Login successfully",
@@ -126,7 +127,11 @@ export async function getMe(req, res) {
 export async function logout(req, res) {
   const token = req.cookies.token;
 
-  res.clearCookie("token");
+  res.clearCookie("token", {
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
+});
 
   //** use mongoose to store data
   // await blacklistModel.create({
