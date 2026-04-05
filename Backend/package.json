@@ -29,6 +29,8 @@
     "langchain": "^1.2.37",
     "mongoose": "^9.3.2",
     "morgan": "^1.10.1",
-    "nodemailer": "^8.0.4"
+    "nodemailer": "^8.0.4",
+    "path": "^0.12.7",
+    "url": "^0.11.4"
   }
 }
