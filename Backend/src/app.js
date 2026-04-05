@@ -17,7 +17,8 @@ app.use(
     origin: [
       "chrome-extension://oanhpfjblpgdfnnfgkfjhakcchnmjhfc",
       "https://recallix-3xvg.onrender.com",
-      "https://69d224a1c1d67ef51d7855d3--recallixgg.netlify.app"
+      "https://69d224a1c1d67ef51d7855d3--recallixgg.netlify.app",
+      "http://localhost:5173"
     ], // your extension ID
     credentials: true,
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
