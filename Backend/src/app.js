@@ -16,7 +16,7 @@ app.use(
   cors({
     origin: [
       "chrome-extension://oanhpfjblpgdfnnfgkfjhakcchnmjhfc",
-      "https://recallix-3xvg.onrender.com/",
+      "https://recallix-3xvg.onrender.com",
     ], // your extension ID
     credentials: true,
     methods: ["GET", "POST",, "DELETE", "OPTIONS"],
