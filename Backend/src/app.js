@@ -4,6 +4,7 @@ import itemRoutes from "./routes/item.route.js";
 import morgan from "morgan";
 import cookie from "cookie-parser";
 import cors from "cors";
+import path from "path"
 
 
 const app = express();
@@ -11,6 +12,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static("./public"))
 app.use(cookie());
 app.use(morgan("dev"));
 app.use(
