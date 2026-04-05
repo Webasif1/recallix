@@ -7,7 +7,6 @@ import Home from "./Pages/Home";
 import Dashboard from "../feature/item/pages/Dashboard"
 import NoteFound from "../feature/item/pages/NotFound"
 import { Navigate } from "react-router-dom";
-import GraphView from "../feature/item/components/GraphView";
 
 export const router = createBrowserRouter([
   {
@@ -37,9 +36,5 @@ export const router = createBrowserRouter([
   },{
     path:"*",
     element: <NoteFound/>
-  },
-  {
-    path:"/graph",
-    element: <GraphView/>
   }
 ])
