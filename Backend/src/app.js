@@ -19,7 +19,7 @@ app.use(
       "https://recallix-3xvg.onrender.com",
     ], // your extension ID
     credentials: true,
-    methods: ["GET", "POST",, "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
