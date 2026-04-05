@@ -83,25 +83,25 @@ export const decideFolder = async (suggestedFolder, title, tags) => {
     const collections = await Item.distinct("collection");
 
     const prompt = `
-          You are an AI that organizes content into folders.
+You are an AI that organizes content into folders.
 
-          Existing folders:
-          ${collections.join(", ") || "None"}
+Existing folders:
+${collections.join(", ") || "None"}
 
-          New content:
-          Title: ${title}
-          Tags: ${tags.join(", ")}
+New content:
+Title: ${title}
+Tags: ${tags.join(", ")}
 
-          Rules:
-          - ALWAYS try to reuse an existing folder if it is even slightly related
-          - DO NOT create new folder if a similar one exists
-          - Only create a new folder if absolutely necessary
-          - Keep folder names short and general (1-2 words max)
-          - Avoid specific names like "React Hooks", use broader ones like "Frontend"
-          - Output ONLY the folder name
+Rules:
+- If an existing folder is clearly relevant (e.g., same topic, category, or domain), reuse it.
+- If no existing folder is a good match, create a new, appropriate folder.
+- Do NOT force reuse of an unrelated folder just to avoid creating a new one.
+- Folder names must be short (1–2 words), broad but descriptive (e.g., "AI", "Frontend", "Design").
+- Avoid overly specific names like "React Hooks" – prefer "Frontend" or "React".
+- Output ONLY the folder name, nothing else.
 
-          Answer:
-          `;
+Answer:
+`
 
     const response = await geminiModel.invoke(prompt);
 
