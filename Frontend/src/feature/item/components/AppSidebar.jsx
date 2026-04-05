@@ -17,7 +17,8 @@ import {
   Sparkles,
   Menu,
   X,
-  FolderArchive
+  FolderArchive,
+  User,
 } from 'lucide-react';
 
 const navItems = [
@@ -32,11 +33,11 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
   const [collectionsOpen, setCollectionsOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { items } = useSelector((state) => state.items);
+  const { user } = useSelector((state) => state.auth); // get user from auth
   const itemsArray = Array.isArray(items) ? items : [];
-  const { handleLogout } = useAuth()
-  const navigate = useNavigate()
+  const { handleLogout } = useAuth();
+  const navigate = useNavigate();
 
-  // Rest of the component remains the same...
   const collectionMap = itemsArray.reduce((acc, item) => {
     const col = item.collection;
     if (col && !acc[col]) acc[col] = { name: col, count: 0 };
@@ -56,16 +57,22 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
     setMobileOpen(false);
   };
 
+  const handleProfileClick = () => {
+    onViewChange('profile');
+    setMobileOpen(false);
+  };
+
   const handleLogoutClick = async () => {
     try {
       await handleLogout();
-
-      // redirect after logout
-      navigate("/");
+      navigate('/');
     } catch (err) {
-      console.error("Logout failed:", err);
+      console.error('Logout failed:', err);
     }
   };
+
+  // Get username or fallback
+  const username = user?.username || user?.name || 'User';
 
   const sidebarContent = (
     <>
@@ -97,10 +104,11 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  isActive
                     ? 'bg-gray-800 text-white'
                     : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                  }`}
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 {item.label}
@@ -131,10 +139,11 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
                   <button
                     key={col.name}
                     onClick={() => handleCollectionClick(col.name)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isColActive
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isColActive
                         ? 'bg-gray-800 text-white'
                         : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                      }`}
+                    }`}
                   >
                     <span className="text-base">📁</span>
                     <span className="truncate flex-1 text-left">{col.name}</span>
@@ -150,7 +159,17 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
         </div>
       </nav>
 
-      <div className="p-3 border-t border-gray-800">
+      {/* Bottom section: User info + Logout */}
+      <div className="p-3 border-t border-gray-800 space-y-2">
+        <button
+          onClick={handleProfileClick}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-800/50"
+        >
+          <div className="w-6 h-6 rounded-full bg-[#F45B26]/20 flex items-center justify-center">
+            <User className="w-3.5 h-3.5 text-[#F45B26]" />
+          </div>
+          <span className="text-gray-200 font-medium">{username}</span>
+        </button>
         <button
           onClick={handleLogoutClick}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
@@ -170,7 +189,7 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
           <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#F45B26]/15">
             <FolderArchive className="w-3.5 h-3.5 text-[#F45B26]" />
           </div>
-          <span className="text-base font-semibold text-white">The Archive</span>
+          <span className="text-base font-semibold text-white">Recallix</span>
         </div>
         <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
           <Menu className="w-5 h-5" />

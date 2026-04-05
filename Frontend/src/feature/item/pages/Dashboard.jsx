@@ -11,6 +11,7 @@ import SearchView from '../components/SearchView';
 import ResurfacedView from '../components/ResurfacedView';
 import CollectionView from '../components/CollectionView';
 import QuickSaveModal from '../components/QuickSaveModal';
+import Profile from '../components/Profile';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -38,6 +39,7 @@ const Dashboard = () => {
       case 'search': return <SearchView />;
       case 'graph': return <GraphView />;
       case 'resurfaced': return <ResurfacedView />;
+      case 'profile': return <Profile />;
       default: return <DashboardView />;
     }
   };
