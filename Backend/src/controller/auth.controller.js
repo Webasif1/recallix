@@ -81,7 +81,6 @@ export async function login(req, res) {
   );
 
   res.cookie("token", token, {
-    domain: "https://recallix.onrender.com/",
     httpOnly: true,
     secure: true,
     sameSite: "None",
