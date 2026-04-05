@@ -7,11 +7,12 @@ import cors from "cors";
 import path from "path";
 
 const app = express();
+const __dirname = path.resolve();
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("./public"));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(cookie());
 app.use(morgan("dev"));
 app.use(
@@ -28,11 +29,15 @@ app.use(
   }),
 );
 
+app.use("/api/auth", authRouter);
+app.use("/api/items", itemRoutes);
+
 app.get("/", (req, res) => {
   res.send("Welcome");
 });
 
-app.use("/api/auth", authRouter);
-app.use("/api/items", itemRoutes);
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 export default app;
