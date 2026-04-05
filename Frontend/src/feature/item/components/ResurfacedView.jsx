@@ -72,7 +72,7 @@ const ResurfacedView = () => {
                 >
                   <button
                     onClick={() => handleDelete(item._id, item.title)}
-                    className="absolute bottom-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
+                    className="absolute bottom-3 right-4 opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />

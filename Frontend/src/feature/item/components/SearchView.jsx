@@ -65,7 +65,7 @@ const SearchView = () => {
             <div key={item._id} className="bg-gray-900/50 rounded-xl p-4 border border-gray-800 hover:border-[#F45B26]/30 transition-all group relative">
               <button
                 onClick={() => handleDelete(item._id, item.title)}
-                className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
+                className="absolute bottom-4 right-4 opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
                 title="Delete"
               >
                 <Trash2 className="w-4 h-4" />

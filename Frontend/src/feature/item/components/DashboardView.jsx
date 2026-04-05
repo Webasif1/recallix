@@ -205,7 +205,7 @@ const MemoryCard = ({ item, timeAgo, onDelete }) => (
         <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
         <button
           onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 md:absolute bottom-2 right-4"
+          className="opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 md:absolute bottom-2 right-4"
           title="Delete"
         >
           <Trash2 className="w-4 h-4" />
@@ -242,7 +242,7 @@ const RecentSaveCard = ({ item, onDelete }) => (
       </div>
       <button
         onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 absolute bottom-2 right-4"
+        className="opacity-100 transition-opacity p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 absolute bottom-2 right-4"
         title="Delete"
       >
         <Trash2 className="w-4 h-4" />
