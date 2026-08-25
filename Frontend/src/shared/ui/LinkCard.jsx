@@ -56,13 +56,64 @@ const SourceMark = ({ url }) => {
 };
 
 /**
+ * Preview image scraped from the page, with a generated fallback.
+ *
+ * Points at an arbitrary third-party host, so:
+ *  - referrerPolicy="no-referrer" keeps the user's Recallix URL out of that
+ *    host's logs;
+ *  - a fixed 16:9 box means the grid never reflows as images arrive;
+ *  - onError and a missing image both fall through to the same tinted tile,
+ *    so rows stay aligned instead of collapsing to different heights.
+ */
+const Thumbnail = ({ url, image, title }) => {
+  const [failed, setFailed] = useState(false);
+  const domain = getDomain(url);
+
+  const showFallback = !image || failed;
+
+  return (
+    <div
+      className="relative aspect-video w-full overflow-hidden rounded-t-card bg-raised"
+      aria-hidden="true"
+    >
+      {showFallback ? (
+        <div
+          className="w-full h-full flex items-center justify-center"
+          style={{ background: getDomainTint(url) }}
+        >
+          <span className="text-h1 font-semibold text-ink/25 select-none">
+            {domain.charAt(0).toUpperCase() || "?"}
+          </span>
+        </div>
+      ) : (
+        <img
+          src={image}
+          // Decorative: the title right below carries the meaning, and the
+          // scraped og:image has no trustworthy description.
+          alt=""
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          title={title}
+        />
+      )}
+
+      {/* Keeps a hairline between image and card edge on light thumbnails */}
+      <div className="absolute inset-0 rounded-t-card ring-1 ring-inset ring-ink/5" />
+    </div>
+  );
+};
+
+/**
  * The single saved-link card.
  *
  * Replaces five near-identical inline card blocks that had drifted apart
  * (different padding, different absolutely-positioned buttons overlapping
  * their own content, one calling an undefined handler).
  *
- * Priority order, per the redesign: title, source, tags, primary action.
+ * Priority order, per the redesign: thumbnail, title, source, tags, action.
  * The whole card opens the link; the row actions stop propagation.
  */
 const LinkCard = ({
@@ -72,6 +123,9 @@ const LinkCard = ({
   onCollectionClick,
   deleting = false,
   highlight = false,
+  // Compact contexts (the dashboard's "Last saved" strip) opt out of the
+  // preview image so the rows stay dense.
+  thumbnail = true,
   // Cards sit under an <h2> section heading in some views and directly under
   // the page <h1> in others. Defaulting to h3 and letting the caller drop to
   // h2 keeps the document outline from skipping a level.
@@ -114,6 +168,10 @@ const LinkCard = ({
         deleting && "opacity-50 pointer-events-none",
       )}
     >
+      {thumbnail && (
+        <Thumbnail url={item.url} image={item.image} title={item.title} />
+      )}
+
       <div className="p-5 flex-1 flex flex-col">
         {/* Source row */}
         <div className="flex items-center gap-2.5 min-w-0">
