@@ -1,165 +1,391 @@
-import React from 'react';
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  BookOpen,
-  LogIn,
-  UserPlus,
+  Sparkle,
   ArrowRight,
-  Save,
-  Tag,
-  Share2,
-  Sparkles,
-  FolderArchive,
-  Globe,
-  Cpu
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+  Search,
+  FolderOpen,
+  Bookmark,
+  Menu,
+  X,
+  MessageSquareDashed,
+  FolderX,
+  Timer,
+  GraduationCap,
+  Code2,
+  Palette,
+  Microscope,
+} from "lucide-react";
+import RecallDemo from "../../feature/marketing/components/RecallDemo";
+import Button from "../../shared/ui/Button";
+
+const NAV_LINKS = [
+  { href: "#how", label: "How it works" },
+  { href: "#problem", label: "Why" },
+  { href: "#uses", label: "Use cases" },
+];
+
+const FRUSTRATIONS = [
+  {
+    icon: FolderX,
+    title: "Bookmarks are a graveyard",
+    body: "Nine hundred of them in folders you named once and never opened again.",
+  },
+  {
+    icon: MessageSquareDashed,
+    title: "Links die in chat threads",
+    body: "You sent it to yourself on Slack. It's somewhere above four months of messages.",
+  },
+  {
+    icon: Timer,
+    title: "You remember the idea, not the source",
+    body: "Something about database indexes. A good post. No idea where.",
+  },
+];
+
+const STEPS = [
+  {
+    icon: Bookmark,
+    title: "Save",
+    body: "Paste a link. That's the whole interaction — no title to write, no folder to choose.",
+  },
+  {
+    icon: FolderOpen,
+    title: "Organise",
+    body: "Recallix reads the page, writes a short summary, picks the tags and files it into a topic.",
+  },
+  {
+    icon: Search,
+    title: "Recall",
+    body: "Describe what you half-remember. It matches on meaning, not on the exact words you typed.",
+  },
+];
+
+const USE_CASES = [
+  {
+    icon: Code2,
+    title: "Developers",
+    body: "The Stack Overflow answer, the migration guide, the config that finally worked.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Learners",
+    body: "Courses, papers and threads worth coming back to when the topic finally clicks.",
+  },
+  {
+    icon: Palette,
+    title: "Designers",
+    body: "References and patterns you'll want the moment a similar problem appears.",
+  },
+  {
+    icon: Microscope,
+    title: "Researchers",
+    body: "Sources you must be able to find again, months after you first read them.",
+  },
+];
+
+const Section = ({ id, children, className = "" }) => (
+  <section id={id} className={`px-5 sm:px-8 py-16 md:py-24 ${className}`}>
+    <div className="max-w-6xl mx-auto">{children}</div>
+  </section>
+);
 
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-gray-100">
-      {/* Background decorative elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#F45B26]/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#F45B26]/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-4xl max-h-4xl bg-[#F45B26]/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-canvas">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:bg-surface focus:border focus:border-line focus:rounded-control focus:px-4 focus:py-2 focus:text-small"
+      >
+        Skip to content
+      </a>
 
-      {/* Navigation */}
-      <nav className="relative z-10 border-b border-gray-800/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-[#F45B26] to-[#F45B26]/80 rounded-xl shadow-lg shadow-[#F45B26]/20">
-                <FolderArchive className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-[#F45B26] to-[#F45B26]/70 bg-clip-text text-transparent">
-                Recallix
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                to="/login"
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+      {/* ---- Nav ---- */}
+      <header className="sticky top-0 z-40 bg-canvas/85 backdrop-blur border-b border-line">
+        <nav
+          aria-label="Main"
+          className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between gap-4"
+        >
+          <Link to="/" className="flex items-center gap-2.5 rounded-control">
+            <span className="w-8 h-8 rounded-control bg-accent flex items-center justify-center">
+              <Sparkle className="w-4 h-4 text-white" aria-hidden="true" />
+            </span>
+            <span className="text-h3 font-semibold text-ink tracking-tight">
+              Recallix
+            </span>
+          </Link>
+
+          <div className="hidden md:flex items-center gap-1">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="px-3 py-2 rounded-control text-small text-muted hover:text-ink hover:bg-raised transition-colors"
               >
-                <LogIn className="w-4 h-4" />
-                Log in
-              </Link>
-              <Link
-                to="/register"
-                className="flex items-center gap-2 px-4 py-2 bg-[#F45B26] hover:bg-[#F45B26]/80 rounded-lg text-sm font-medium transition-all shadow-lg shadow-[#F45B26]/20"
-              >
-                <UserPlus className="w-4 h-4" />
-                Sign up free
-              </Link>
-            </div>
+                {link.label}
+              </a>
+            ))}
           </div>
-        </div>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-            Save everything,
-            <span className="block text-[#F45B26]">Forget nothing</span>
-          </h1>
-          <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-            Recallix automatically organizes, connects, and resurfaces your saved content —
-            so the right knowledge finds you at the right time.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#F45B26] hover:bg-[#F45B26]/80 rounded-lg font-semibold transition-all shadow-lg shadow-[#F45B26]/25 text-lg"
-            >
-              Get Started
-              <ArrowRight className="w-5 h-5" />
+          <div className="hidden md:flex items-center gap-2">
+            <Link to="/login">
+              <Button variant="ghost" size="sm">
+                Sign in
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button variant="primary" size="sm">
+                Get started
+              </Button>
             </Link>
           </div>
-        </div>
-      </section>
 
-      {/* Features Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Everything you need to build your knowledge base
-          </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            From saving to discovering, Recallix handles the heavy lifting.
-          </p>
-        </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? (
+              <X className="w-5 h-5" aria-hidden="true" />
+            ) : (
+              <Menu className="w-5 h-5" aria-hidden="true" />
+            )}
+          </Button>
+        </nav>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Save Anything */}
-          <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-800 hover:border-[#F45B26]/30 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-[#F45B26]/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#F45B26]/20 transition-colors">
-              <Save className="w-6 h-6 text-[#F45B26]" />
+        {menuOpen && (
+          <div className="md:hidden border-t border-line bg-surface px-5 py-4 space-y-1">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="block px-3 py-2.5 rounded-control text-small text-body hover:bg-raised"
+              >
+                {link.label}
+              </a>
+            ))}
+
+            <div className="pt-2 grid grid-cols-2 gap-2">
+              <Link to="/login">
+                <Button variant="secondary" size="md" className="w-full">
+                  Sign in
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button variant="primary" size="md" className="w-full">
+                  Get started
+                </Button>
+              </Link>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Save Anything</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Articles, tweets, videos, PDFs — save from anywhere on the internet. One click and it's in your archive.
-            </p>
           </div>
+        )}
+      </header>
 
-          {/* AI Auto-Tagging */}
-          <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-800 hover:border-[#F45B26]/30 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-[#F45B26]/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#F45B26]/20 transition-colors">
-              <Tag className="w-6 h-6 text-[#F45B26]" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">AI Auto-Tagging</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Automatic tag suggestions and topic clustering for your saved items. Never lose a thought again.
-            </p>
-          </div>
-
-          {/* Knowledge Graph */}
-          <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-800 hover:border-[#F45B26]/30 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-[#F45B26]/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#F45B26]/20 transition-colors">
-              <Share2 className="w-6 h-6 text-[#F45B26]" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Knowledge Graph</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Visualize connections between your saved items in an interactive graph. Discover relationships you never knew existed.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Optional: Show how it works or a CTA banner */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="bg-gradient-to-r from-[#F45B26]/10 via-[#F45B26]/5 to-transparent rounded-2xl p-8 border border-[#F45B26]/20">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <main id="main">
+        {/* ---- Hero ---- */}
+        <Section className="pt-14 md:pt-20">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
-              <h3 className="text-2xl font-bold mb-2">Ready to stop forgetting?</h3>
-              <p className="text-gray-300">Join thousands of curators building their second brain.</p>
+              <span className="inline-flex items-center gap-1.5 text-caption font-medium text-accent bg-accent-soft border border-accent-line rounded-full px-3 py-1">
+                <Sparkle className="w-3 h-3" aria-hidden="true" />
+                Your memory for the web
+              </span>
+
+              <h1 className="mt-5 text-display font-bold text-ink">
+                Save it now.
+                <br />
+                Recall it later.
+              </h1>
+
+              <p className="mt-5 text-lg text-muted max-w-lg leading-relaxed">
+                Recallix keeps the links you'd otherwise lose — and finds them
+                again from the little you remember. No folders to maintain, no
+                titles to write.
+              </p>
+
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <Link to="/register">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    iconRight={ArrowRight}
+                    className="w-full sm:w-auto"
+                  >
+                    Start saving
+                  </Button>
+                </Link>
+
+                <a href="#how">
+                  <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                    See how it works
+                  </Button>
+                </a>
+              </div>
+
+              <p className="mt-4 text-small text-faint">
+                Free to start · No credit card
+              </p>
             </div>
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#F45B26] hover:bg-[#F45B26]/80 rounded-lg font-semibold transition-all shadow-lg shadow-[#F45B26]/20 whitespace-nowrap"
-            >
-              Start curating for free
-              <Sparkles className="w-4 h-4" />
+
+            <RecallDemo />
+          </div>
+        </Section>
+
+        {/* ---- Problem ---- */}
+        <Section id="problem" className="border-t border-line bg-surface">
+          <div className="max-w-2xl">
+            <h2 className="text-h1 font-semibold text-ink">
+              You already saved it. That was never the problem.
+            </h2>
+            <p className="mt-3 text-lg text-muted">
+              The problem is finding it four months later, when you only
+              remember what it was about.
+            </p>
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-5">
+            {FRUSTRATIONS.map((item) => (
+              <div
+                key={item.title}
+                className="bg-canvas border border-line rounded-card p-5"
+              >
+                <span className="w-9 h-9 rounded-control bg-raised border border-line flex items-center justify-center">
+                  <item.icon className="w-4 h-4 text-muted" aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 text-h3 font-semibold text-ink">
+                  {item.title}
+                </h3>
+                <p className="mt-1.5 text-small text-muted leading-relaxed">
+                  {item.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* ---- How it works ---- */}
+        <Section id="how" className="border-t border-line">
+          <div className="max-w-2xl">
+            <h2 className="text-h1 font-semibold text-ink">
+              Three steps, and you only do the first one
+            </h2>
+            <p className="mt-3 text-lg text-muted">
+              Everything after the paste happens without you.
+            </p>
+          </div>
+
+          <div className="mt-10 grid md:grid-cols-3 gap-5">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.title}
+                className="bg-surface border border-line rounded-card p-6 shadow-card"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-control bg-accent-soft border border-accent-line flex items-center justify-center">
+                    <step.icon className="w-4 h-4 text-accent" aria-hidden="true" />
+                  </span>
+                  <span className="text-caption font-medium text-faint tabular-nums">
+                    0{i + 1}
+                  </span>
+                </div>
+
+                <h3 className="mt-4 text-h2 font-semibold text-ink">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-small text-muted leading-relaxed">
+                  {step.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* ---- Use cases ---- */}
+        <Section id="uses" className="border-t border-line bg-surface">
+          <div className="max-w-2xl">
+            <h2 className="text-h1 font-semibold text-ink">
+              For anyone who reads more than they can remember
+            </h2>
+          </div>
+
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {USE_CASES.map((item) => (
+              <div
+                key={item.title}
+                className="bg-canvas border border-line rounded-card p-5"
+              >
+                <item.icon className="w-5 h-5 text-accent" aria-hidden="true" />
+                <h3 className="mt-3 text-h3 font-semibold text-ink">
+                  {item.title}
+                </h3>
+                <p className="mt-1.5 text-small text-muted leading-relaxed">
+                  {item.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* ---- CTA ---- */}
+        <Section className="border-t border-line">
+          <div className="bg-ink rounded-modal px-6 sm:px-12 py-14 text-center">
+            <h2 className="text-h1 sm:text-display font-bold text-white max-w-2xl mx-auto leading-tight">
+              Stop losing things worth keeping
+            </h2>
+
+            <p className="mt-4 text-base text-white/70 max-w-md mx-auto">
+              Save your first link in about ten seconds. Find it again in two.
+            </p>
+
+            <Link to="/register" className="inline-block mt-8">
+              <Button variant="primary" size="lg" iconRight={ArrowRight}>
+                Start saving
+              </Button>
             </Link>
           </div>
-        </div>
-      </section>
+        </Section>
+      </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-gray-800 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4" />
-              <span>Powered by GPT-4 • Auto-tagging active</span>
-            </div>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-gray-300 transition">About</a>
-              <a href="#" className="hover:text-gray-300 transition">Privacy</a>
-              <a href="#" className="hover:text-gray-300 transition">Terms</a>
-            </div>
-            <div>© 2025 Recallix. All rights reserved.</div>
+      {/* ---- Footer ---- */}
+      <footer className="border-t border-line px-5 sm:px-8 py-10">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-control bg-accent flex items-center justify-center">
+              <Sparkle className="w-3.5 h-3.5 text-white" aria-hidden="true" />
+            </span>
+            <span className="text-small font-semibold text-ink">Recallix</span>
           </div>
+
+          <nav aria-label="Footer" className="flex items-center gap-5">
+            <a
+              href="#how"
+              className="text-small text-muted hover:text-ink transition-colors"
+            >
+              How it works
+            </a>
+            <Link
+              to="/login"
+              className="text-small text-muted hover:text-ink transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/register"
+              className="text-small text-muted hover:text-ink transition-colors"
+            >
+              Get started
+            </Link>
+          </nav>
+
+          <p className="text-caption text-faint">
+            © {new Date().getFullYear()} Recallix
+          </p>
         </div>
       </footer>
     </div>
