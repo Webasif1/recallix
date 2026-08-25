@@ -102,3 +102,55 @@ button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]) {
   cursor: pointer;
 }
+
+/* ===== Footer wordmark =====
+   Oversized outlined lettering that fills in on hover. Sized to overflow the
+   viewport slightly so it crops at the edges rather than sitting boxed in. */
+.rx-wordmark {
+  line-height: 0.78;
+  padding-block: 0.08em;
+}
+
+.rx-wordmark__inner {
+  display: flex;
+  justify-content: space-between;
+  font-size: clamp(4rem, 20vw, 20rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.rx-wordmark__letter {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--color-line-strong);
+  transition:
+    color 0.45s var(--ease-out-soft),
+    -webkit-text-stroke-color 0.45s var(--ease-out-soft);
+}
+
+/* Both halves move: the fill arrives AND the outline warms to the accent.
+   Filling with accent-soft alone was nearly invisible against the canvas. */
+.rx-wordmark:hover .rx-wordmark__letter {
+  color: var(--color-accent-soft);
+  -webkit-text-stroke-color: var(--color-accent);
+}
+
+/* Browsers without text-stroke would render nothing at all, so give them a
+   solid faint fill instead of an invisible element. */
+@supports not (-webkit-text-stroke: 1px currentColor) {
+  .rx-wordmark__letter {
+    color: var(--color-raised);
+  }
+
+  .rx-wordmark:hover .rx-wordmark__letter {
+    color: var(--color-accent-soft);
+  }
+}
+
+/* The global reduce block shortens durations but not delays — clear the
+   stagger too, or the letters still arrive one by one. */
+@media (prefers-reduced-motion: reduce) {
+  .rx-wordmark__letter {
+    transition-delay: 0ms !important;
+  }
+}

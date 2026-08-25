@@ -17,6 +17,7 @@ import {
   Microscope,
 } from "lucide-react";
 import RecallDemo from "../../feature/marketing/components/RecallDemo";
+import Footer from "../../feature/marketing/components/Footer";
 import Button from "../../shared/ui/Button";
 
 const NAV_LINKS = [
@@ -47,7 +48,7 @@ const STEPS = [
   {
     icon: Bookmark,
     title: "Save",
-    body: "Paste a link. That's the whole interaction — no title to write, no folder to choose.",
+    body: "Paste a link. That's the whole interaction no title to write, no folder to choose.",
   },
   {
     icon: FolderOpen,
@@ -204,7 +205,7 @@ export default function Home() {
               </h1>
 
               <p className="mt-5 text-lg text-muted max-w-lg leading-relaxed">
-                Recallix keeps the links you'd otherwise lose — and finds them
+                Recallix keeps the links you'd otherwise lose and finds them
                 again from the little you remember. No folders to maintain, no
                 titles to write.
               </p>
@@ -352,42 +353,7 @@ export default function Home() {
         </Section>
       </main>
 
-      {/* ---- Footer ---- */}
-      <footer className="border-t border-line px-5 sm:px-8 py-10">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <span className="w-7 h-7 rounded-control bg-accent flex items-center justify-center">
-              <Sparkle className="w-3.5 h-3.5 text-white" aria-hidden="true" />
-            </span>
-            <span className="text-small font-semibold text-ink">Recallix</span>
-          </div>
-
-          <nav aria-label="Footer" className="flex items-center gap-5">
-            <a
-              href="#how"
-              className="text-small text-muted hover:text-ink transition-colors"
-            >
-              How it works
-            </a>
-            <Link
-              to="/login"
-              className="text-small text-muted hover:text-ink transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/register"
-              className="text-small text-muted hover:text-ink transition-colors"
-            >
-              Get started
-            </Link>
-          </nav>
-
-          <p className="text-caption text-faint">
-            © {new Date().getFullYear()} Recallix
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
