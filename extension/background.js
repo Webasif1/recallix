@@ -12,7 +12,7 @@ const notify = (title, message) => {
   // The popup is closed during a context-menu save, so use a badge instead of
   // a silent console.log the user never sees.
   chrome.action.setBadgeText({ text: title });
-  chrome.action.setBadgeBackgroundColor({ color: "#e4572e" });
+  chrome.action.setBadgeBackgroundColor({ color: "#4f46e5" });
   chrome.action.setTitle({ title: message });
 
   setTimeout(() => chrome.action.setBadgeText({ text: "" }), 4000);

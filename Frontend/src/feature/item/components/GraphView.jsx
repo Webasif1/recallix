@@ -71,8 +71,8 @@ const GraphView = ({
 
   const colors = useMemo(
     () => ({
-      accent: readToken("--color-accent", "#e4572e"),
-      accentSoft: readToken("--color-accent-soft", "#fdf1ed"),
+      accent: readToken("--color-accent", "#4f46e5"),
+      accentSoft: readToken("--color-accent-soft", "#eef0fe"),
       ink: readToken("--color-ink", "#12131a"),
       muted: readToken("--color-muted", "#6b7280"),
       line: readToken("--color-line", "#e7e8ec"),

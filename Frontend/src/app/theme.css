@@ -28,16 +28,16 @@
   /* ---- Accent ------------------------------------------------------ */
   /*
    * Three uses have to clear 4.5:1 at once, and the darkest one governs:
-   *   white text ON accent (primary buttons)   -> 5.2:1
-   *   accent text ON canvas (links, active nav)-> 5.2:1
-   *   accent text ON accent-soft (badges)      -> 4.7:1  <- binding constraint
+   *   white text ON accent (primary buttons)    -> 6.29:1
+   *   accent text ON canvas (links, active nav) -> 6.29:1
+   *   accent text ON accent-soft (badges)       -> 5.55:1  <- binding
    * The original #F45B26 managed only 3.7:1 on the first two, so every
    * primary button in the app was failing AA.
    */
-  --color-accent: #c2410c;
-  --color-accent-hover: #9a3412;
-  --color-accent-soft: #fdf1ed; /* tinted fill behind accent text */
-  --color-accent-line: #f5cdbd;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-soft: #eef0fe; /* tinted fill behind accent text */
+  --color-accent-line: #d4d8fb;
 
   /* ---- Status ------------------------------------------------------ */
   --color-success: #0f7b4f;
@@ -49,6 +49,29 @@
   --color-danger-soft: #fdeeee;
   --color-info: #1d4ed8;
   --color-info-soft: #eef2ff;
+
+  /* ---- Chart series ------------------------------------------------
+   * Categorical identity only. Assigned in THIS fixed order and never
+   * cycled: a sixth-and-beyond category folds into `chart-other`, it does
+   * not get a generated hue. Status colours above are reserved and must
+   * never appear here as "series 4".
+   *
+   * Validated (dataviz validate_palette.js, light, surface #ffffff):
+   *   lightness band  PASS      chroma floor       PASS
+   *   CVD separation  PASS  worst adjacent dE 9.9 (protan)
+   *   normal vision   PASS  worst adjacent dE 21.4
+   *   contrast        WARN  #CA8A04 is 2.94:1 on white
+   *
+   * That WARN is relieved, not dismissed: every chart using this ramp
+   * carries a legend naming each slice with its figure as text, so colour
+   * is never the only way to read the chart.
+   */
+  --color-chart-1: #4f46e5;
+  --color-chart-2: #0891b2;
+  --color-chart-3: #db2777;
+  --color-chart-4: #ca8a04;
+  --color-chart-5: #15803d;
+  --color-chart-other: #9ca3af; /* the aggregate bucket, not an identity */
 
   /* ---- Type -------------------------------------------------------- */
   /* System stack: no network request, no font swap flash. */
