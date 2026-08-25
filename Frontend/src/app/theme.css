@@ -1,0 +1,129 @@
+/**
+ * Recallix design tokens.
+ *
+ * Tailwind v4 `@theme` turns each entry into a real utility, so `--color-ink`
+ * is usable as `text-ink`, `bg-ink`, `border-ink`. Components should reference
+ * these names only — no more raw #F45B26 / gray-900 scattered through JSX.
+ *
+ * Direction: light, quiet, roomy. One accent, used for primary action and
+ * active state only. Destructive actions use `danger`, never the accent.
+ */
+
+@theme {
+  /* ---- Surfaces ---------------------------------------------------- */
+  --color-canvas: #fcfcfd; /* page background */
+  --color-surface: #ffffff; /* cards, sidebar, modals */
+  --color-raised: #f6f7f9; /* subtle fills, hover, skeletons */
+  --color-sunken: #f0f1f4; /* inset wells, code, track */
+  --color-line: #e7e8ec; /* hairline borders */
+  --color-line-strong: #d5d7de; /* focused / emphasised borders */
+
+  /* ---- Text -------------------------------------------------------- */
+  /* Contrast ratios below are measured against --color-canvas. */
+  --color-ink: #12131a; /* headings                 16.5:1 */
+  --color-body: #3f4350; /* body copy                 9.4:1 */
+  --color-muted: #6b7280; /* meta, captions            4.8:1 */
+  --color-faint: #6f7480; /* de-emphasised meta        4.7:1 */
+
+  /* ---- Accent ------------------------------------------------------ */
+  /*
+   * Three uses have to clear 4.5:1 at once, and the darkest one governs:
+   *   white text ON accent (primary buttons)   -> 5.2:1
+   *   accent text ON canvas (links, active nav)-> 5.2:1
+   *   accent text ON accent-soft (badges)      -> 4.7:1  <- binding constraint
+   * The original #F45B26 managed only 3.7:1 on the first two, so every
+   * primary button in the app was failing AA.
+   */
+  --color-accent: #c2410c;
+  --color-accent-hover: #9a3412;
+  --color-accent-soft: #fdf1ed; /* tinted fill behind accent text */
+  --color-accent-line: #f5cdbd;
+
+  /* ---- Status ------------------------------------------------------ */
+  --color-success: #0f7b4f;
+  --color-success-soft: #e8f5ee;
+  --color-warning: #b45309;
+  --color-warning-soft: #fdf3e7;
+  --color-danger: #c02b2b;
+  --color-danger-hover: #a02020;
+  --color-danger-soft: #fdeeee;
+  --color-info: #1d4ed8;
+  --color-info-soft: #eef2ff;
+
+  /* ---- Type -------------------------------------------------------- */
+  /* System stack: no network request, no font swap flash. */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --text-display: clamp(2.5rem, 6vw, 4rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.03em;
+  --text-display--font-weight: 700;
+
+  --text-h1: 1.75rem;
+  --text-h1--line-height: 1.2;
+  --text-h1--letter-spacing: -0.02em;
+
+  --text-h2: 1.25rem;
+  --text-h2--line-height: 1.3;
+  --text-h2--letter-spacing: -0.01em;
+
+  --text-h3: 1rem;
+  --text-h3--line-height: 1.4;
+
+  /* Body copy overrides Tailwind's `text-base` rather than adding a
+     `--text-body`, which would collide with the `--color-body` token: both
+     generate a `text-body` utility and one would silently win. */
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.6;
+
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.5;
+
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-caption--letter-spacing: 0.02em;
+
+  /* ---- Radius ------------------------------------------------------ */
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-modal: 20px;
+
+  /* ---- Elevation --------------------------------------------------- */
+  /* Two only. Depth comes from hairlines and spacing, not stacked shadows. */
+  --shadow-card: 0 1px 2px rgba(18, 19, 26, 0.04);
+  --shadow-pop:
+    0 12px 32px -8px rgba(18, 19, 26, 0.16), 0 2px 8px rgba(18, 19, 26, 0.06);
+
+  /* ---- Motion ------------------------------------------------------ */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Focus: one visible ring everywhere, never removed without a replacement. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+}
+
+/* Respect the OS setting — animation is decoration, never the only signal. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

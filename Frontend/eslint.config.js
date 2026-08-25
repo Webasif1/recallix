@@ -23,7 +23,15 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // eslint-plugin-react is not installed, so an identifier used only
+      // inside JSX (`<Icon />`) is not counted as read. The existing
+      // varsIgnorePattern already works around that for local components;
+      // argsIgnorePattern extends it to component props destructured as
+      // `({ icon: Icon })`.
+      'no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' },
+      ],
     },
   },
 ])
