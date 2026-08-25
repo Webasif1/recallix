@@ -1,17 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recallix</title>
-  <link rel="stylesheet" href="./popup.css">
-</head>
-<body>
-  <div class="container">
-    <h1>Recallix</h1>
-    <p>Save your items quickly 🚀</p>
-    <button id="saveBtn">Save Now</button>
-  </div>
-  <script src="popup.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recallix</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="brand">
+        <span class="mark">✦</span>
+        <span class="name">Recallix</span>
+      </div>
+
+      <p class="page-title" id="pageTitle">Loading…</p>
+      <p class="page-url" id="pageUrl"></p>
+
+      <button id="saveBtn">Save this page</button>
+
+      <!-- Status replaces alert(): a browser alert blocks the popup and looks
+           nothing like the product. -->
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
 </html>

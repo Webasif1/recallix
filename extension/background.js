@@ -1,27 +1,51 @@
+import { API_BASE } from "./config.js";
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "saveToRecallix",
     title: "Save to Recallix",
-    contexts: ["page"]
+    contexts: ["page", "link"],
   });
 });
 
+const notify = (title, message) => {
+  // The popup is closed during a context-menu save, so use a badge instead of
+  // a silent console.log the user never sees.
+  chrome.action.setBadgeText({ text: title });
+  chrome.action.setBadgeBackgroundColor({ color: "#e4572e" });
+  chrome.action.setTitle({ title: message });
+
+  setTimeout(() => chrome.action.setBadgeText({ text: "" }), 4000);
+};
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === "saveToRecallix") {
-    const url = tab.url;
+  if (info.menuItemId !== "saveToRecallix") return;
 
-    try {
-      const res = await fetch("http://localhost:3000/api/items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
-      });
+  const url = info.linkUrl || tab?.url;
+  if (!url || !/^https?:/i.test(url)) return;
 
-      if (!res.ok) throw new Error("Failed to save");
+  try {
+    const res = await fetch(`${API_BASE}/api/items`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Cookie-based auth — omitted before, so every save was rejected.
+      credentials: "include",
+      body: JSON.stringify({ url }),
+    });
 
-      console.log("Saved via right-click 🚀");
-    } catch (err) {
-      console.error(err);
+    if (res.status === 401) {
+      notify("!", "Sign in to Recallix, then try again");
+      return;
     }
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      notify("!", body.message || "Could not save to Recallix");
+      return;
+    }
+
+    notify("✓", "Saved to Recallix");
+  } catch (err) {
+    notify("!", `Network error: ${err.message}`);
   }
 });

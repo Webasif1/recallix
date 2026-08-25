@@ -1,13 +1,18 @@
 {
   "manifest_version": 3,
   "name": "Recallix Saver",
-  "version": "1.0",
-  "description": "Save content to Recallix",
-  "permissions": ["activeTab", "contextMenus", "storage", "scripting"],
+  "version": "1.1",
+  "description": "Save the current page to Recallix",
+  "permissions": ["activeTab", "contextMenus", "storage", "cookies"],
+  "host_permissions": [
+    "https://recallix.onrender.com/*",
+    "http://localhost:3000/*"
+  ],
   "action": {
     "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   }
 }
