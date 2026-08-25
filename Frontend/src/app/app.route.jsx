@@ -1,37 +1,53 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import Login from "../feature/auth/pages/Login";
 import Register from "../feature/auth/pages/Register";
 import PublicRoute from "../feature/auth/components/PublicRoute";
+import Protected from "../feature/auth/components/Protected";
 import Home from "./Pages/Home";
-import Dashboard from "../feature/item/pages/Dashboard"
-import NoteFound from "../feature/item/pages/NotFound"
-import { Navigate } from "react-router-dom";
+import Dashboard from "../feature/item/pages/Dashboard";
+import NotFound from "../feature/item/pages/NotFound";
 
 export const router = createBrowserRouter([
   {
+    path: "/",
+    element: (
+      <PublicRoute>
+        <Home />
+      </PublicRoute>
+    ),
+  },
+  {
     path: "/login",
-    element: <Login />
+    element: (
+      <PublicRoute>
+        <Login />
+      </PublicRoute>
+    ),
   },
   {
     path: "/register",
-    element: <Register />
+    element: (
+      <PublicRoute>
+        <Register />
+      </PublicRoute>
+    ),
   },
   {
-    path: "/",
-    element: <PublicRoute>
-      <Home />
-    </PublicRoute>
-
+    // Was rendering unguarded: a signed-out visitor reached the dashboard and
+    // saw an empty shell plus a stream of 401s.
+    path: "/dashboard",
+    element: (
+      <Protected>
+        <Dashboard />
+      </Protected>
+    ),
   },
   {
     path: "/home",
-    element: <Navigate to="/" replace />
+    element: <Navigate to="/" replace />,
   },
   {
-    path: "/dashboard",
-    element: <Dashboard />
-  },{
-    path:"*",
-    element: <NoteFound/>
-  }
-])
+    path: "*",
+    element: <NotFound />,
+  },
+]);

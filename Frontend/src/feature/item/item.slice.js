@@ -4,135 +4,159 @@ import {
   createItemAPI,
   deleteItemAPI,
 } from "../item/service/itemAPI";
+import { getApiErrorMessage } from "../../shared/lib/apiClient";
 
-// 📥 Fetch Items
+/** Shared predicate — used by the slice and by every view that filters. */
+export const matchesQuery = (item, query) => {
+  if (!query) return true;
+
+  const q = query.toLowerCase();
+
+  return (
+    item.title?.toLowerCase().includes(q) ||
+    item.summary?.toLowerCase().includes(q) ||
+    item.collection?.toLowerCase().includes(q) ||
+    item.url?.toLowerCase().includes(q) ||
+    item.tags?.some((tag) => tag.toLowerCase().includes(q))
+  );
+};
+
+const applyFilter = (state) => {
+  state.filteredItems = state.searchQuery
+    ? state.items.filter((item) => matchesQuery(item, state.searchQuery))
+    : [...state.items];
+};
+
+// Views used to each dispatch fetchItems() on mount, so navigating the sidebar
+// refetched the whole library every time. This condition collapses those into
+// one request unless the data is stale or a refresh is explicitly asked for.
+const FRESH_FOR_MS = 60_000;
+
 export const fetchItems = createAsyncThunk(
   "items/fetch",
-  async (_, { getState }) => {
-    const token = getState().auth.token;
-    const res = await getItemsAPI(token);
-    return res.data; // expecting { data: [...] }
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await getItemsAPI();
+      return res.data.data ?? [];
+    } catch (err) {
+      return rejectWithValue(getApiErrorMessage(err, "Failed to load items"));
+    }
+  },
+  {
+    condition: ({ force } = {}, { getState }) => {
+      const { listStatus, lastFetched } = getState().items;
+
+      if (force) return true;
+      if (listStatus === "loading") return false;
+      if (lastFetched && Date.now() - lastFetched < FRESH_FOR_MS) return false;
+
+      return true;
+    },
   },
 );
 
-// ➕ Add Item
 export const addItem = createAsyncThunk(
   "items/add",
-  async (url, { getState }) => {
-    const token = getState().auth.token;
-    const res = await createItemAPI(url, token);
-    return res.data; // expecting { data: {...} }
+  async (url, { rejectWithValue }) => {
+    try {
+      const res = await createItemAPI(url);
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(getApiErrorMessage(err, "Failed to save link"));
+    }
   },
 );
 
-// ❌ Delete Item
 export const deleteItem = createAsyncThunk(
   "items/delete",
-  async (id, { getState }) => {
-    const token = getState().auth.token;
-    await deleteItemAPI(id, token);
-    return id;
+  async (id, { rejectWithValue }) => {
+    try {
+      await deleteItemAPI(id);
+      return id;
+    } catch (err) {
+      return rejectWithValue(getApiErrorMessage(err, "Failed to delete item"));
+    }
   },
 );
 
 const itemSlice = createSlice({
   name: "items",
   initialState: {
-    items: [],          // original items
-    filteredItems: [],  // items after search/filter
-    loading: false,
+    items: [],
+    filteredItems: [],
+    searchQuery: "",
+
+    // Separate status per operation. A single shared `loading` meant saving a
+    // link blanked the entire dashboard behind a spinner for several seconds.
+    listStatus: "idle", // idle | loading | succeeded | failed
+    savingStatus: "idle",
+    deletingIds: [],
+
     error: null,
-    searchQuery: "",    // current search string
+    saveError: null,
+    lastFetched: null,
   },
   reducers: {
     clearError: (state) => {
       state.error = null;
+      state.saveError = null;
     },
     setSearchQuery: (state, action) => {
-      state.searchQuery = action.payload;
-      const query = action.payload.toLowerCase().trim();
-      if (!query) {
-        state.filteredItems = [...state.items];
-      } else {
-        state.filteredItems = state.items.filter(item =>
-          item.title?.toLowerCase().includes(query) ||
-          item.summary?.toLowerCase().includes(query) ||
-          item.collection?.toLowerCase().includes(query) ||
-          item.tags?.some(tag => tag.toLowerCase().includes(query))
-        );
-      }
+      state.searchQuery = action.payload.toLowerCase().trim();
+      applyFilter(state);
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch items
       .addCase(fetchItems.pending, (state) => {
-        state.loading = true;
+        state.listStatus = "loading";
         state.error = null;
       })
       .addCase(fetchItems.fulfilled, (state, action) => {
-        state.loading = false;
-        // action.payload is { data: [...] } from your API
-        const itemsArray = action.payload?.data || [];
-        state.items = itemsArray;
-        // Re-apply current search filter
-        const query = state.searchQuery.toLowerCase().trim();
-        if (!query) {
-          state.filteredItems = [...itemsArray];
-        } else {
-          state.filteredItems = itemsArray.filter(item =>
-            item.title?.toLowerCase().includes(query) ||
-            item.summary?.toLowerCase().includes(query) ||
-            item.collection?.toLowerCase().includes(query) ||
-            item.tags?.some(tag => tag.toLowerCase().includes(query))
-          );
-        }
+        state.listStatus = "succeeded";
+        state.items = action.payload;
+        state.lastFetched = Date.now();
+        applyFilter(state);
       })
       .addCase(fetchItems.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-        state.items = [];
-        state.filteredItems = [];
+        state.listStatus = "failed";
+        state.error = action.payload ?? action.error.message;
+        // Keep whatever is already on screen — wiping it turns a transient
+        // network blip into an empty library.
       })
-      // Add item
+
       .addCase(addItem.pending, (state) => {
-        state.loading = true;
+        state.savingStatus = "loading";
+        state.saveError = null;
       })
       .addCase(addItem.fulfilled, (state, action) => {
-        state.loading = false;
-        const newItem = action.payload?.data;
-        if (newItem) {
+        state.savingStatus = "succeeded";
+
+        const newItem = action.payload;
+        if (newItem && !state.items.some((i) => i._id === newItem._id)) {
           state.items.unshift(newItem);
-          // Re-apply search filter
-          const query = state.searchQuery.toLowerCase().trim();
-          if (!query) {
-            state.filteredItems = [...state.items];
-          } else {
-            state.filteredItems = state.items.filter(item =>
-              item.title?.toLowerCase().includes(query) ||
-              item.summary?.toLowerCase().includes(query) ||
-              item.collection?.toLowerCase().includes(query) ||
-              item.tags?.some(tag => tag.toLowerCase().includes(query))
-            );
-          }
+          applyFilter(state);
         }
       })
       .addCase(addItem.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+        state.savingStatus = "failed";
+        state.saveError = action.payload ?? action.error.message;
       })
-      // Delete item
-      .addCase(deleteItem.pending, (state) => {
-        state.loading = true;
+
+      .addCase(deleteItem.pending, (state, action) => {
+        state.deletingIds.push(action.meta.arg);
       })
       .addCase(deleteItem.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items = state.items.filter(item => item._id !== action.payload);
-        state.filteredItems = state.filteredItems.filter(item => item._id !== action.payload);
+        const id = action.payload;
+        state.deletingIds = state.deletingIds.filter((d) => d !== id);
+        state.items = state.items.filter((item) => item._id !== id);
+        applyFilter(state);
       })
       .addCase(deleteItem.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+        state.deletingIds = state.deletingIds.filter(
+          (d) => d !== action.meta.arg,
+        );
+        state.error = action.payload ?? action.error.message;
       });
   },
 });

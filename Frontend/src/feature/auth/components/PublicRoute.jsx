@@ -1,17 +1,17 @@
-// src/components/PublicRoute.jsx
-import { Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import RouteSplash from "./RouteSplash";
 
+/**
+ * Gate for signed-out routes (landing, login, register).
+ * A signed-in user gets sent straight to their dashboard.
+ */
 const PublicRoute = ({ children }) => {
-  // Inside PublicRoute or ProtectedRoute
-const { user, loading } = useSelector((state) => state.auth);
+  const { user, loading } = useSelector((state) => state.auth);
 
-if (loading) return <div className="...">Loading...</div>;
+  if (loading) return <RouteSplash label="Checking your session…" />;
 
-  // If user is logged in, redirect to dashboard
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return children;
 };
