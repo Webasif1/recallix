@@ -1,10 +1,25 @@
 import { body, validationResult } from "express-validator";
+import { responseMessage } from "../utils/responseMessage.js";
 
 export function validate(req, res, next) {
   const errors = validationResult(req);
+
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    const list = errors.array();
+
+    // Same envelope as every other endpoint, so the client can always read
+    // `message`. Field errors ride along in `data` for inline form display.
+    return responseMessage(res, {
+      status: 400,
+      message: list[0].msg,
+      success: false,
+      error: "Validation failed",
+      data: {
+        fields: list.map(({ path, msg }) => ({ field: path, message: msg })),
+      },
+    });
   }
+
   next();
 }
 
@@ -34,12 +49,15 @@ export const registerValidator = [
   validate,
 ];
 
-export const loginValidation=[
+export const loginValidation = [
   body("email")
-  .trim()
-  .notEmpty().withMessage("Email is require")
-  .isEmail().withMessage("Please Provide a valid email"),
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email"),
 
-  body("password")
-  .notEmpty().withMessage("Password is required")
-]
+  body("password").notEmpty().withMessage("Password is required"),
+
+  validate,
+];

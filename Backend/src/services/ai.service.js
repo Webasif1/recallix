@@ -11,12 +11,20 @@ const mistralModel = new ChatMistralAI({
 
 const extractTitleFromURL = async (url) => {
   try {
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, {
+      timeout: 8000,
+      maxRedirects: 5,
+      // Some sites 403 a bare axios UA
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; RecallixBot/1.0)" },
+    });
     const dom = cheerio.load(data);
-    let title = dom("title").text();
+    let title = dom("title").text().trim();
 
     if (!title) {
-      title = $("meta[property='og:title']").attr("content") || "Untitled";
+      title =
+        dom("meta[property='og:title']").attr("content")?.trim() ||
+        dom("meta[name='twitter:title']").attr("content")?.trim() ||
+        "Untitled";
     }
 
     return title.trim();
@@ -60,15 +68,24 @@ export const processContent = async (url) => {
     const jsonEnd = text.lastIndexOf("}") + 1;
 
     const cleanJson = text.slice(jsonStart, jsonEnd);
+    const parsed = JSON.parse(cleanJson);
 
-    return JSON.parse(cleanJson);
+    // The scraped <title> is usually better than whatever the model invents
+    return {
+      title: parsed.title?.trim() || title || "Untitled",
+      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
+      folder: parsed.folder?.trim() || "General",
+      summary: parsed.summary?.trim() || "",
+    };
   } catch (error) {
-    console.error("AI Error:", error);
+    console.error("AI Error:", error.message);
 
+    // Degrade to the scraped title rather than losing the save entirely
     return {
       title: "Untitled",
       tags: [],
       folder: "General",
+      summary: "",
     };
   }
 };
@@ -78,9 +95,11 @@ const geminiModel = new ChatGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-export const decideFolder = async (suggestedFolder, title, tags) => {
+export const decideFolder = async (suggestedFolder, title, tags, userId) => {
   try {
-    const collections = await Item.distinct("collection");
+    // Scoped to the saving user — one account's folder names must never leak
+    // into another account's prompt.
+    const collections = await Item.distinct("collection", { user: userId });
 
     const prompt = `
 You are an AI that organizes content into folders.
@@ -90,7 +109,7 @@ ${collections.join(", ") || "None"}
 
 New content:
 Title: ${title}
-Tags: ${tags.join(", ")}
+Tags: ${(tags || []).join(", ")}
 
 Rules:
 - If an existing folder is clearly relevant (e.g., same topic, category, or domain), reuse it.
@@ -115,9 +134,9 @@ Answer:
         normalize(result).includes(normalize(folder)),
     );
 
-    return similarFolder || result;
+    return similarFolder || result || suggestedFolder || "General";
   } catch (error) {
-    console.error("Gemini Error:", error);
+    console.error("Gemini Error:", error.message);
     return suggestedFolder || "General";
   }
 };

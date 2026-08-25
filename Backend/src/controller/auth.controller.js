@@ -101,7 +101,6 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
   const userId = req.user.id;
-  console.log(req.user.id);
 
   const user = await userModel.findById(userId).select("-password");
 
@@ -131,15 +130,26 @@ export async function logout(req, res) {
     sameSite: "None",
   });
 
-  //** use mongoose to store data
-  // await blacklistModel.create({
-  //   token,
-  // });
+  // Blacklist for the token's REMAINING lifetime. The old fixed 1h TTL let a
+  // signed-out 7 day token become valid again an hour later.
+  if (token) {
+    try {
+      const { exp } = jwt.decode(token) || {};
+      const ttl = exp ? exp - Math.floor(Date.now() / 1000) : 0;
 
-  //**use redis to store data */
-  await redis.set(token, Date.now().toString(), "EX", 60 * 60);
+      if (ttl > 0) {
+        await redis.set(token, "revoked", "EX", ttl);
+      }
+    } catch (err) {
+      // Never fail a logout because the cache is unavailable — the cookie is
+      // already cleared, which is the part the user can see.
+      console.error("Logout blacklist write failed:", err.message);
+    }
+  }
 
-  res.status(200).json({
-    message: "logout successfully.",
+  responseMessage(res, {
+    status: 200,
+    message: "Logged out successfully",
+    success: true,
   });
 }
