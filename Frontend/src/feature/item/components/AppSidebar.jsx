@@ -1,181 +1,259 @@
-// src/feature/item/components/AppSidebar.jsx (or src/components/AppSidebar.jsx)
-import { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { useAuth } from '../../auth/hook/useAuth';
-import { useNavigate } from 'react-router';
+import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   Home,
+  Sparkle,
   Search,
-  Bookmark,
-  FolderOpen,
+  Library,
   Network,
   Clock,
-  LogOut,
-  Plus,
+  FolderOpen,
   ChevronDown,
   ChevronRight,
-  Sparkles,
+  Plus,
   Menu,
   X,
-  FolderArchive,
-  User,
-} from 'lucide-react';
+  LogOut,
+} from "lucide-react";
+import { useAuth } from "../../auth/hook/useAuth";
+import Button from "../../../shared/ui/Button";
+import ConfirmDialog from "../../../shared/ui/ConfirmDialog";
+import notify from "../../../shared/lib/notify";
+import { cx } from "../../../shared/lib/cx";
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'saved', label: 'All Saved', icon: Bookmark },
-  { id: 'search', label: 'Search', icon: Search },
-  { id: 'graph', label: 'Knowledge Graph', icon: Network },
-  { id: 'resurfaced', label: 'Resurfaced', icon: Clock },
+const NAV = [
+  { id: "home", label: "Home", icon: Home },
+  { id: "recall", label: "Recall", icon: Search },
+  { id: "library", label: "Library", icon: Library },
+  { id: "collections", label: "Collections", icon: FolderOpen },
+  { id: "graph", label: "Graph", icon: Network },
+  { id: "resurfaced", label: "Resurfaced", icon: Clock },
 ];
 
-const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
+// The four most common actions on a phone, as a bottom bar.
+const MOBILE_NAV = NAV.slice(0, 4);
+
+const AppSidebar = ({
+  activeView,
+  activeCollection,
+  onViewChange,
+  onCollectionClick,
+  onQuickSave,
+}) => {
   const [collectionsOpen, setCollectionsOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { items } = useSelector((state) => state.items);
-  const { user } = useSelector((state) => state.auth); // get user from auth
-  const itemsArray = Array.isArray(items) ? items : [];
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const items = useSelector((state) => state.items.items);
+  const user = useSelector((state) => state.auth.user);
   const { handleLogout } = useAuth();
   const navigate = useNavigate();
 
-  const collectionMap = itemsArray.reduce((acc, item) => {
-    const col = item.collection;
-    if (col && !acc[col]) acc[col] = { name: col, count: 0 };
-    if (col) acc[col].count++;
-    return acc;
-  }, {});
-  const collections = Object.values(collectionMap);
-  const resurfacedCount = itemsArray.slice(0, 3).length;
+  const collections = useMemo(() => {
+    const map = new Map();
 
-  const handleNavigate = (view) => {
-    onViewChange(view);
+    for (const item of items) {
+      if (!item.collection) continue;
+      map.set(item.collection, (map.get(item.collection) ?? 0) + 1);
+    }
+
+    return [...map.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [items]);
+
+  // Close the drawer whenever the view changes
+  useEffect(() => {
     setMobileOpen(false);
-  };
+  }, [activeView, activeCollection]);
 
-  const handleCollectionClick = (collectionName) => {
-    onViewChange(`collection-${collectionName}`);
-    setMobileOpen(false);
-  };
+  // Lock background scroll while the drawer is open
+  useEffect(() => {
+    if (!mobileOpen) return;
 
-  const handleProfileClick = () => {
-    onViewChange('profile');
-    setMobileOpen(false);
-  };
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
 
-  const handleLogoutClick = async () => {
+    const onKey = (e) => e.key === "Escape" && setMobileOpen(false);
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
+  const onLogout = async () => {
+    setLoggingOut(true);
+
     try {
       await handleLogout();
-      navigate('/');
-    } catch (err) {
-      console.error('Logout failed:', err);
+      notify.success("Signed out", { id: "auth-logout" });
+      navigate("/", { replace: true });
+    } catch {
+      notify.error("Couldn't sign you out", { id: "auth-logout" });
+    } finally {
+      setLoggingOut(false);
+      setConfirmLogout(false);
     }
   };
 
-  // Get username or fallback
-  const username = user?.username || user?.name || 'User';
+  const navButton = (item) => {
+    const isActive = activeView === item.id && !activeCollection;
+    const Icon = item.icon;
 
-  const sidebarContent = (
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => onViewChange(item.id)}
+        aria-current={isActive ? "page" : undefined}
+        className={cx(
+          "w-full flex items-center gap-3 px-3 py-2 rounded-control text-small transition-colors",
+          isActive
+            ? "bg-accent-soft text-accent font-medium"
+            : "text-body hover:bg-raised hover:text-ink",
+        )}
+      >
+        <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+        {item.label}
+      </button>
+    );
+  };
+
+  const content = (
     <>
-      <div className="p-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#F45B26]/15">
-            <FolderArchive className="w-4 h-4 text-[#F45B26]" />
-          </div>
-          <span className="text-lg font-semibold text-gray-100 tracking-tight">Recallix</span>
+      <div className="px-4 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-control bg-accent flex items-center justify-center">
+            <Sparkle className="w-4 h-4 text-white" aria-hidden="true" />
+          </span>
+          <span className="text-h3 font-semibold text-ink tracking-tight">
+            Recallix
+          </span>
         </div>
-        <button onClick={() => setMobileOpen(false)} className="md:hidden p-1.5 rounded-md text-gray-400 hover:text-white">
-          <X className="w-5 h-5" />
-        </button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close menu"
+          className="md:hidden"
+        >
+          <X className="w-4 h-4" aria-hidden="true" />
+        </Button>
       </div>
 
-      <div className="px-3 mb-2">
-        <button onClick={onQuickSave} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#F45B26]/10 text-[#F45B26] text-sm font-medium hover:bg-[#F45B26]/20 transition-colors">
-          <Plus className="w-4 h-4" />
-          Quick Save
-        </button>
+      <div className="px-3 pb-3">
+        <Button
+          variant="primary"
+          size="md"
+          icon={Plus}
+          onClick={onQuickSave}
+          className="w-full"
+        >
+          Save a link
+        </Button>
       </div>
 
-      <nav className="flex-1 px-3 py-2 overflow-y-auto">
-        <div className="space-y-0.5">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {item.label}
-                {item.id === 'resurfaced' && resurfacedCount > 0 && (
-                  <span className="ml-auto w-5 h-5 rounded-full bg-[#F45B26]/20 text-[#F45B26] text-xs flex items-center justify-center font-medium">
-                    {resurfacedCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      <nav aria-label="Main" className="flex-1 px-3 overflow-y-auto">
+        <div className="space-y-0.5">{NAV.map(navButton)}</div>
 
         <div className="mt-6">
           <button
-            onClick={() => setCollectionsOpen(!collectionsOpen)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
+            type="button"
+            onClick={() => setCollectionsOpen((v) => !v)}
+            aria-expanded={collectionsOpen}
+            className="w-full flex items-center gap-1.5 px-3 py-1.5 text-caption font-medium uppercase tracking-wide text-muted hover:text-ink transition-colors"
           >
-            {collectionsOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            <FolderOpen className="w-3 h-3" />
+            {collectionsOpen ? (
+              <ChevronDown className="w-3 h-3" aria-hidden="true" />
+            ) : (
+              <ChevronRight className="w-3 h-3" aria-hidden="true" />
+            )}
             Collections
+            <span className="ml-auto text-faint normal-case">
+              {collections.length || ""}
+            </span>
           </button>
+
           {collectionsOpen && (
             <div className="mt-1 space-y-0.5">
-              {collections.map((col) => {
-                const isColActive = activeView === `collection-${col.name}`;
+              {collections.slice(0, 8).map((col) => {
+                const isActive = activeCollection === col.name;
+
                 return (
                   <button
                     key={col.name}
-                    onClick={() => handleCollectionClick(col.name)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      isColActive
-                        ? 'bg-gray-800 text-white'
-                        : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                    }`}
+                    type="button"
+                    onClick={() => onCollectionClick(col.name)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cx(
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-control text-small transition-colors",
+                      isActive
+                        ? "bg-accent-soft text-accent font-medium"
+                        : "text-body hover:bg-raised hover:text-ink",
+                    )}
                   >
-                    <span className="text-base">📁</span>
+                    <FolderOpen
+                      className="w-3.5 h-3.5 shrink-0"
+                      aria-hidden="true"
+                    />
                     <span className="truncate flex-1 text-left">{col.name}</span>
-                    <span className="text-xs text-gray-500">{col.count}</span>
+                    <span className="text-caption text-faint">{col.count}</span>
                   </button>
                 );
               })}
+
+              {collections.length > 8 && (
+                <button
+                  type="button"
+                  onClick={() => onViewChange("collections")}
+                  className="w-full text-left px-3 py-2 text-caption text-accent hover:underline"
+                >
+                  View all {collections.length}
+                </button>
+              )}
+
               {collections.length === 0 && (
-                <div className="px-3 py-2 text-xs text-gray-500">No collections yet</div>
+                <p className="px-3 py-2 text-caption text-faint">
+                  Collections appear as you save.
+                </p>
               )}
             </div>
           )}
         </div>
       </nav>
 
-      {/* Bottom section: User info + Logout */}
-      <div className="p-3 border-t border-gray-800 space-y-2">
+      <div className="p-3 border-t border-line space-y-1">
         <button
-          onClick={handleProfileClick}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-800/50"
+          type="button"
+          onClick={() => onViewChange("profile")}
+          aria-current={activeView === "profile" ? "page" : undefined}
+          className={cx(
+            "w-full flex items-center gap-2.5 px-3 py-2 rounded-control text-small transition-colors",
+            activeView === "profile"
+              ? "bg-accent-soft text-accent"
+              : "text-body hover:bg-raised hover:text-ink",
+          )}
         >
-          <div className="w-6 h-6 rounded-full bg-[#F45B26]/20 flex items-center justify-center">
-            <User className="w-3.5 h-3.5 text-[#F45B26]" />
-          </div>
-          <span className="text-gray-200 font-medium">{username}</span>
+          <span className="w-6 h-6 rounded-full bg-accent-soft border border-accent-line flex items-center justify-center text-caption font-semibold text-accent shrink-0">
+            {(user?.username?.[0] ?? "U").toUpperCase()}
+          </span>
+          <span className="truncate font-medium">
+            {user?.username ?? "Account"}
+          </span>
         </button>
+
         <button
-          onClick={handleLogoutClick}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+          type="button"
+          onClick={() => setConfirmLogout(true)}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-control text-small text-muted hover:bg-danger-soft hover:text-danger transition-colors"
         >
-          <LogOut className="w-4 h-4" />
-          Logout
+          <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
+          Sign out
         </button>
       </div>
     </>
@@ -184,41 +262,121 @@ const AppSidebar = ({ activeView, onViewChange, onQuickSave }) => {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-gray-900/95 backdrop-blur-lg border-b border-gray-800 flex items-center justify-between px-4 py-3">
+      <header className="md:hidden fixed top-0 inset-x-0 z-30 h-16 bg-surface/95 backdrop-blur border-b border-line flex items-center justify-between px-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#F45B26]/15">
-            <FolderArchive className="w-3.5 h-3.5 text-[#F45B26]" />
-          </div>
-          <span className="text-base font-semibold text-white">Recallix</span>
+          <span className="w-7 h-7 rounded-control bg-accent flex items-center justify-center">
+            <Sparkle className="w-3.5 h-3.5 text-white" aria-hidden="true" />
+          </span>
+          <span className="text-h3 font-semibold text-ink">Recallix</span>
         </div>
-        <button onClick={() => setMobileOpen(true)} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-          <Menu className="w-5 h-5" />
-        </button>
-      </div>
 
-      {/* Mobile overlay */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+        >
+          <Menu className="w-5 h-5" aria-hidden="true" />
+        </Button>
+      </header>
+
+      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-72 h-full bg-gray-900 border-r border-gray-800 flex flex-col">
-            {sidebarContent}
+          <div
+            className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          <aside
+            aria-label="Navigation"
+            className="relative w-72 max-w-[85vw] h-full bg-surface border-r border-line flex flex-col rx-fade-up"
+          >
+            {content}
           </aside>
         </div>
       )}
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 h-screen bg-gray-900 border-r border-gray-800 flex-col shrink-0">
-        {sidebarContent}
+      {/* Desktop rail */}
+      <aside
+        aria-label="Navigation"
+        className="hidden md:flex w-64 shrink-0 h-screen sticky top-0 bg-surface border-r border-line flex-col"
+      >
+        {content}
       </aside>
 
-      {/* Mobile FAB */}
-      <button
-        onClick={onQuickSave}
-        className="md:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#F45B26] text-white flex items-center justify-center shadow-lg hover:bg-[#F45B26]/90 transition-all active:scale-95"
-        style={{ boxShadow: '0 0 20px -4px rgba(244, 91, 38, 0.4)' }}
+      {/* Mobile bottom bar — the common actions without opening the drawer */}
+      <nav
+        aria-label="Quick navigation"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-line"
       >
-        <Plus className="w-6 h-6" />
-      </button>
+        <div className="grid grid-cols-5 items-center">
+          {MOBILE_NAV.slice(0, 2).map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onViewChange(item.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={cx(
+                  "flex flex-col items-center gap-0.5 py-2.5 min-h-14 text-caption transition-colors",
+                  isActive ? "text-accent" : "text-muted",
+                )}
+              >
+                <Icon className="w-5 h-5" aria-hidden="true" />
+                {item.label}
+              </button>
+            );
+          })}
+
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={onQuickSave}
+              aria-label="Save a link"
+              className="w-12 h-12 -mt-5 rounded-full bg-accent text-white flex items-center justify-center shadow-pop active:scale-95 transition-transform"
+            >
+              <Plus className="w-5 h-5" aria-hidden="true" />
+            </button>
+          </div>
+
+          {MOBILE_NAV.slice(2).map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onViewChange(item.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={cx(
+                  "flex flex-col items-center gap-0.5 py-2.5 min-h-14 text-caption transition-colors",
+                  isActive ? "text-accent" : "text-muted",
+                )}
+              >
+                <Icon className="w-5 h-5" aria-hidden="true" />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={onLogout}
+        loading={loggingOut}
+        tone="accent"
+        title="Sign out of Recallix?"
+        message="Everything you saved stays exactly where it is."
+        confirmLabel="Sign out"
+      />
     </>
   );
 };

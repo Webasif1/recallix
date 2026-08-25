@@ -1,56 +1,161 @@
-// components/QuickSaveModal.jsx
-import React, { useState } from 'react';
-import { X, Link2, Loader2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Link2, Sparkle, ClipboardPaste } from "lucide-react";
+import Modal from "../../../shared/ui/Modal";
+import Button from "../../../shared/ui/Button";
+import Input from "../../../shared/ui/Input";
+import { getDomain } from "../../../shared/lib/domain";
 
+/**
+ * Save flow.
+ *
+ * One field, because one field is all the API needs — the server scrapes the
+ * title, writes the summary, picks the tags and files it into a collection.
+ * Rather than asking for that up front, we say plainly what will happen, so
+ * the wait afterwards is expected instead of mysterious.
+ */
 const QuickSaveModal = ({ open, onClose, onSave }) => {
-  const [url, setUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [url, setUrl] = useState("");
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!url.trim()) return;
-    setLoading(true);
+  useEffect(() => {
+    if (!open) {
+      setUrl("");
+      setError(null);
+      setSaving(false);
+    }
+  }, [open]);
+
+  const domain = getDomain(url);
+
+  // Mirrors Backend/src/utils/normalizeUrl.js: bare domains are accepted and
+  // https is assumed, so "react.dev/learn" is valid input.
+  const isValid = (value) => {
+    const raw = value.trim();
+    if (!raw) return false;
+
     try {
-      await onSave({ url });
-      setUrl('');
-    } finally {
-      setLoading(false);
+      const parsed = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+      return parsed.hostname.includes(".");
+    } catch {
+      return false;
     }
   };
 
-  if (!open) return null;
+  const pasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setUrl(text.trim());
+        setError(null);
+      }
+    } catch {
+      // Clipboard read is permission-gated; typing still works.
+      setError("Your browser blocked clipboard access — paste it manually.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (saving) return;
+
+    if (!isValid(url)) {
+      setError("That doesn't look like a link. Try https://example.com/article");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      await onSave(url.trim());
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-md border border-gray-800 shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <h3 className="text-lg font-semibold text-white">Quick Save</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition">
-            <X className="w-5 h-5" />
+    <Modal
+      open={open}
+      onClose={saving ? undefined : onClose}
+      closeOnBackdrop={!saving}
+      title="Save a link"
+      description="Paste it and forget it — you'll find it again by memory."
+    >
+      <form onSubmit={handleSubmit} noValidate>
+        <Input
+          label="Link"
+          type="url"
+          inputMode="url"
+          icon={Link2}
+          autoComplete="url"
+          placeholder="https://example.com/article"
+          value={url}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setError(null);
+          }}
+          error={error}
+          disabled={saving}
+          autoFocus
+        />
+
+        {navigator.clipboard?.readText && !url && (
+          <button
+            type="button"
+            onClick={pasteFromClipboard}
+            disabled={saving}
+            className="mt-2 inline-flex items-center gap-1.5 text-small text-accent hover:underline rounded"
+          >
+            <ClipboardPaste className="w-3.5 h-3.5" aria-hidden="true" />
+            Paste from clipboard
           </button>
+        )}
+
+        {/* Progressive disclosure: what Recallix will do, shown only once
+            there is something to do it to. */}
+        {domain && isValid(url) && (
+          <div className="mt-4 bg-raised border border-line rounded-card p-4 rx-fade-up">
+            <div className="flex items-center gap-2 text-small font-medium text-ink">
+              <Sparkle className="w-4 h-4 text-accent" aria-hidden="true" />
+              Recallix will handle the rest
+            </div>
+
+            <ul className="mt-2.5 space-y-1 text-small text-muted">
+              <li>· Read the page at {domain}</li>
+              <li>· Write a short summary and pick tags</li>
+              <li>· File it into the right collection</li>
+            </ul>
+
+            <p className="mt-3 text-caption text-faint">
+              Takes a few seconds. You can keep working.
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-5">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onClose}
+            disabled={saving}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            loading={saving}
+            className="flex-1"
+          >
+            {saving ? "Saving…" : "Save link"}
+          </Button>
         </div>
-        <form onSubmit={handleSubmit} className="p-4">
-          <div className="relative">
-            <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com/article"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#F45B26]"
-              required
-              disabled={loading}
-            />
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 transition">Cancel</button>
-            <button type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-[#F45B26] rounded-lg text-white font-medium hover:bg-[#F45B26]/80 transition disabled:opacity-50 flex items-center justify-center gap-2">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 };
 

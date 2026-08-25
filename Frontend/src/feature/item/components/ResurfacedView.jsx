@@ -1,116 +1,136 @@
-// src/components/ResurfacedView.jsx
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchItems, deleteItem } from '../item.slice';
-import { Clock, Calendar, TrendingUp, Trash2 } from 'lucide-react';
-import Loading from './Loading'
-import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { Clock, Plus } from "lucide-react";
+import PageHeader from "../../../shared/ui/PageHeader";
+import LinkCard from "../../../shared/ui/LinkCard";
+import EmptyState from "../../../shared/ui/EmptyState";
+import ErrorState from "../../../shared/ui/ErrorState";
+import { LinkGridSkeleton } from "../../../shared/ui/Skeleton";
+import { resurfaceAPI } from "../service/itemAPI";
+import { getApiErrorMessage } from "../../../shared/lib/apiClient";
+import { cx } from "../../../shared/lib/cx";
 
-const ResurfacedView = () => {
-  const dispatch = useDispatch();
-  const { items, loading } = useSelector((state) => state.items);
-  const itemsArray = Array.isArray(items) ? items : [];
-  const resurfacedItems = itemsArray.slice(0, 6);
+const RANGES = [
+  { days: 30, label: "30 days" },
+  { days: 90, label: "3 months" },
+  { days: 180, label: "6 months" },
+];
+
+/**
+ * Older saves worth a second look.
+ *
+ * Uses GET /api/items/resurface, which has existed on the server all along —
+ * the previous version faked it with items.slice(0, 6), so the "resurfaced"
+ * list was just the six most RECENT saves, the opposite of the intent.
+ */
+const ResurfacedView = ({ onDelete, onTagClick, onCollectionClick, onQuickSave }) => {
+  const [days, setDays] = useState(30);
+  const [fetched, setFetched] = useState([]);
+  const [status, setStatus] = useState("loading");
+  const [error, setError] = useState(null);
+
+  const abortRef = useRef(null);
+
+  // This list is fetched separately from the store, so a delete elsewhere
+  // would leave a ghost card here. Reconcile against the canonical library.
+  const libraryIds = useSelector((state) => state.items.items);
+
+  const items = useMemo(() => {
+    const known = new Set(libraryIds.map((i) => i._id));
+    return fetched.filter((item) => known.has(item._id));
+  }, [fetched, libraryIds]);
+
+  const load = useCallback(async (range) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setStatus("loading");
+    setError(null);
+
+    try {
+      const res = await resurfaceAPI(range, { signal: controller.signal });
+      setFetched(res.data.data ?? []);
+      setStatus("succeeded");
+    } catch (err) {
+      if (err.name === "CanceledError" || err.code === "ERR_CANCELED") return;
+
+      setError(getApiErrorMessage(err, "Couldn't load older saves"));
+      setStatus("failed");
+    }
+  }, []);
 
   useEffect(() => {
-    dispatch(fetchItems());
-  }, [dispatch]);
+    load(days);
+  }, [days, load]);
 
-  const handleDelete = (id, title) => {
-    if (window.confirm(`Delete "${title}"?`)) {
-      dispatch(deleteItem(id)).unwrap()
-        .then(() => toast.success('Deleted', { description: title }))
-        .catch((err) => toast.error('Failed to delete', { description: err.message }));
-    }
-  };
-
-  if (loading) return <Loading message="Resurfacing memories..." />;
-  const getTimeAgo = (dateString) => {
-    if (!dateString) return 'recently';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'today';
-    if (diffDays === 1) return 'yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="p-2 bg-[#F45B26]/10 rounded-xl">
-          <Clock className="w-6 h-6 text-[#F45B26]" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Resurfaced Memories</h1>
-          <p className="text-gray-400 mt-1">
-            Items that need your attention • {resurfacedItems.length} ready to revisit
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto">
+      <PageHeader
+        icon={Clock}
+        title="Resurfaced"
+        subtitle="Things you saved a while ago and probably forgot"
+      />
+
+      <div
+        className="flex gap-2 mb-6"
+        role="group"
+        aria-label="How far back to look"
+      >
+        {RANGES.map((range) => (
+          <button
+            key={range.days}
+            type="button"
+            onClick={() => setDays(range.days)}
+            aria-pressed={days === range.days}
+            className={cx(
+              "px-3.5 py-2 rounded-control text-small border transition-colors min-h-10",
+              days === range.days
+                ? "bg-accent-soft text-accent border-accent-line font-medium"
+                : "bg-surface text-body border-line hover:border-line-strong",
+            )}
+          >
+            Older than {range.label}
+          </button>
+        ))}
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F45B26]"></div>
-        </div>
-      ) : (
+      {status === "loading" && <LinkGridSkeleton count={6} />}
+
+      {status === "failed" && (
+        <ErrorState message={error} onRetry={() => load(days)} />
+      )}
+
+      {status === "succeeded" && items.length === 0 && (
+        <EmptyState
+          icon={Clock}
+          title="Nothing has aged yet"
+          description={`No saved link is older than ${
+            RANGES.find((r) => r.days === days)?.label
+          }. Come back later, or widen the range.`}
+          action={{ label: "Save a link", icon: Plus, onClick: onQuickSave }}
+        />
+      )}
+
+      {status === "succeeded" && items.length > 0 && (
         <>
-          {resurfacedItems.length === 0 ? (
-            <div className="text-center py-20 bg-gray-900/30 rounded-xl border border-gray-800">
-              <Clock className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">No resurfaced items yet.</p>
-              <p className="text-sm text-gray-500 mt-1">Save more content to see resurfaced memories.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {resurfacedItems.map((item, index) => (
-                <div
-                  key={item._id}
-                  className="bg-gradient-to-r from-gray-900/80 to-gray-800/40 rounded-xl border border-gray-800 hover:border-[#F45B26]/30 transition-all duration-300 p-5 group relative"
-                >
-                  <button
-                    onClick={() => handleDelete(item._id, item.title)}
-                    className="absolute bottom-3 right-4 opacity-100 transition-opacity p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 z-10"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <div className="flex flex-col md:flex-row md:items-start gap-4">
-                    <div className="flex-1 pr-8">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <span className="text-xs font-medium px-2 py-0.5 bg-[#F45B26]/10 text-[#F45B26] rounded-full">
-                          {item.collection || 'General'}
-                        </span>
-                        {index === 0 && (
-                          <span className="text-xs px-2 py-0.5 bg-yellow-500/10 text-yellow-400 rounded-full flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            Top Pick
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-lg font-bold text-white group-hover:text-[#F45B26] transition-colors line-clamp-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-gray-300 text-sm mt-2 line-clamp-3">{item.summary}</p>
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {item.tags?.slice(0, 4).map(tag => (
-                          <span key={tag} className="text-xs px-2 py-1 bg-gray-800 rounded-full text-gray-300">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 whitespace-nowrap">
-                      <Calendar className="w-3 h-3" />
-                      <span>{getTimeAgo(item.createdAt || item.updatedAt)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <p className="text-small text-muted mb-4">
+            {items.length} {items.length === 1 ? "link" : "links"}, oldest first
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {items.map((item) => (
+              <LinkCard
+                key={item._id}
+                item={item}
+                onDelete={onDelete}
+                onTagClick={onTagClick}
+                onCollectionClick={onCollectionClick}
+              />
+            ))}
+          </div>
         </>
       )}
     </div>

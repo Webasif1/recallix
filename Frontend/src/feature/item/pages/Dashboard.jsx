@@ -1,64 +1,166 @@
-// src/feature/item/pages/Dashboard.jsx
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { useDispatch } from 'react-redux';
-import { addItem } from '../item.slice';
-import AppSidebar from '../components/AppSidebar';
-import DashboardView from '../components/DashboardView';
-import AllSavedView from '../components/AllSavedView';
-import GraphView from '../components/GraphView';
-import SearchView from '../components/SearchView';
-import ResurfacedView from '../components/ResurfacedView';
-import CollectionView from '../components/CollectionView';
-import QuickSaveModal from '../components/QuickSaveModal';
-import Profile from '../components/Profile';
+import { Suspense, lazy, useCallback, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
+import { fetchItems } from "../item.slice";
+import { useItemActions } from "../hook/useItemActions";
+import AppSidebar from "../components/AppSidebar";
+import HomeView from "../components/HomeView";
+import LibraryView from "../components/LibraryView";
+import RecallView from "../components/RecallView";
+import CollectionsView from "../components/CollectionsView";
+import CollectionView from "../components/CollectionView";
+import ResurfacedView from "../components/ResurfacedView";
+import Profile from "../components/Profile";
+import QuickSaveModal from "../components/QuickSaveModal";
+import { LinkGridSkeleton } from "../../../shared/ui/Skeleton";
+
+// The force-graph bundle is large and only one view needs it.
+const GraphView = lazy(() => import("../components/GraphView"));
+
+const VALID_VIEWS = [
+  "home",
+  "recall",
+  "library",
+  "collections",
+  "graph",
+  "resurfaced",
+  "profile",
+];
 
 const Dashboard = () => {
   const dispatch = useDispatch();
-  const [activeView, setActiveView] = useState('dashboard');
-  const [quickSaveOpen, setQuickSaveOpen] = useState(false);
+  const [params, setParams] = useSearchParams();
 
-  const handleSave = async (data) => {
-    try {
-      await dispatch(addItem(data.url)).unwrap();
-      toast.success('Saved!', { description: data.title || data.url });
-      setQuickSaveOpen(false);
-    } catch (error) {
-      toast.error('Failed to save', { description: error.message });
-    }
+  const { items, listStatus, error } = useSelector((state) => state.items);
+  const { requestDelete, confirmDialog, save } = useItemActions();
+
+  // View lives in the URL so back/forward work, views are linkable, and a
+  // refresh does not drop the user back on Home.
+  const rawView = params.get("view") || "home";
+  const collection = params.get("collection");
+  const activeView = VALID_VIEWS.includes(rawView) ? rawView : "home";
+
+  // Fetched ONCE here rather than in every view. The thunk's `condition`
+  // guard also blocks refetching data that is still fresh.
+  useEffect(() => {
+    dispatch(fetchItems());
+  }, [dispatch]);
+
+  const setView = useCallback(
+    (view, extra = {}) => {
+      const next = { view };
+      if (extra.collection) next.collection = extra.collection;
+      if (extra.tag) next.tag = extra.tag;
+
+      setParams(next);
+    },
+    [setParams],
+  );
+
+  const openCollection = useCallback(
+    (name) => setView("collections", { collection: name }),
+    [setView],
+  );
+
+  const openTag = useCallback(
+    (tag) => setView("library", { tag }),
+    [setView],
+  );
+
+  const quickSaveOpen = params.get("save") === "1";
+
+  const setQuickSave = useCallback(
+    (open) => {
+      setParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (open) next.set("save", "1");
+        else next.delete("save");
+        return next;
+      });
+    },
+    [setParams],
+  );
+
+  const handleSave = async (url) => {
+    const ok = await save(url);
+    if (ok) setQuickSave(false);
+    return ok;
+  };
+
+  const retry = useCallback(
+    () => dispatch(fetchItems({ force: true })),
+    [dispatch],
+  );
+
+  const shared = {
+    items,
+    listStatus,
+    error,
+    onRetry: retry,
+    onDelete: requestDelete,
+    onTagClick: openTag,
+    onCollectionClick: openCollection,
+    onNavigate: setView,
+    onQuickSave: () => setQuickSave(true),
   };
 
   const renderView = () => {
-    if (activeView.startsWith('collection-')) {
-      const collectionName = activeView.replace('collection-', '');
-      return <CollectionView collectionName={collectionName} onBack={() => setActiveView('dashboard')} />;
+    if (activeView === "collections" && collection) {
+      return (
+        <CollectionView
+          {...shared}
+          collectionName={collection}
+          onBack={() => setView("collections")}
+        />
+      );
     }
+
     switch (activeView) {
-      case 'dashboard': return <DashboardView />;
-      case 'saved': return <AllSavedView />;
-      case 'search': return <SearchView />;
-      case 'graph': return <GraphView />;
-      case 'resurfaced': return <ResurfacedView />;
-      case 'profile': return <Profile />;
-      default: return <DashboardView />;
+      case "recall":
+        return <RecallView {...shared} />;
+      case "library":
+        return <LibraryView {...shared} activeTag={params.get("tag")} />;
+      case "collections":
+        return <CollectionsView {...shared} />;
+      case "resurfaced":
+        return <ResurfacedView {...shared} />;
+      case "profile":
+        return <Profile {...shared} />;
+      case "graph":
+        return (
+          <Suspense fallback={<LinkGridSkeleton count={3} />}>
+            <GraphView {...shared} />
+          </Suspense>
+        );
+      default:
+        return <HomeView {...shared} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 overflow-hidden">
+    <div className="flex min-h-screen bg-canvas">
       <AppSidebar
         activeView={activeView}
-        onViewChange={setActiveView}
-        onQuickSave={() => setQuickSaveOpen(true)}
+        activeCollection={collection}
+        onViewChange={setView}
+        onCollectionClick={openCollection}
+        onQuickSave={() => setQuickSave(true)}
       />
-      <main className="flex-1 overflow-y-auto p-4 pt-16 md:pt-6 md:p-6 lg:p-8">
-        {renderView()}
+
+      <main
+        id="main"
+        className="flex-1 min-w-0 pt-16 md:pt-0 pb-24 md:pb-0 overflow-x-hidden"
+      >
+        <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-9">{renderView()}</div>
       </main>
+
       <QuickSaveModal
         open={quickSaveOpen}
-        onClose={() => setQuickSaveOpen(false)}
+        onClose={() => setQuickSave(false)}
         onSave={handleSave}
       />
+
+      {confirmDialog}
     </div>
   );
 };

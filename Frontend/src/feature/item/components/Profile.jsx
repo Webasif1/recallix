@@ -1,128 +1,159 @@
-// src/components/Profile.jsx
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router';
-import { useAuth } from '../../auth/hook/useAuth';
-import { User, Mail, Calendar, LogOut, ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
+import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { User, Mail, CalendarDays, LogOut, Bookmark, FolderOpen, Hash } from "lucide-react";
+import PageHeader from "../../../shared/ui/PageHeader";
+import Button from "../../../shared/ui/Button";
+import ConfirmDialog from "../../../shared/ui/ConfirmDialog";
+import EmptyState from "../../../shared/ui/EmptyState";
+import { useAuth } from "../../auth/hook/useAuth";
+import notify from "../../../shared/lib/notify";
+import { formatDate, timeAgo } from "../../../shared/lib/formatDate";
 
-const Profile = () => {
+const Row = ({ icon: Icon, label, value }) => (
+  <div className="flex items-center gap-3 px-4 py-3.5 border-b border-line last:border-0">
+    <Icon className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
+
+    <div className="min-w-0">
+      <p className="text-caption text-muted">{label}</p>
+      <p className="text-small text-ink truncate">{value || "—"}</p>
+    </div>
+  </div>
+);
+
+const Profile = ({ items, onNavigate }) => {
   const navigate = useNavigate();
   const { handleLogout } = useAuth();
-  const { user, loading } = useSelector((state) => state.auth);
+  const user = useSelector((state) => state.auth.user);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const stats = useMemo(() => {
+    const collections = new Set();
+    const tags = new Set();
+
+    for (const item of items) {
+      if (item.collection) collections.add(item.collection);
+      item.tags?.forEach((t) => tags.add(t));
+    }
+
+    return {
+      total: items.length,
+      collections: collections.size,
+      tags: tags.size,
+      lastSave: items[0]?.createdAt,
+    };
+  }, [items]);
 
   const onLogout = async () => {
+    setLoggingOut(true);
+
     try {
       await handleLogout();
-      toast.success('Logged out successfully');
-      navigate('/');
-    } catch (error) {
-      toast.error('Logout failed');
+      notify.success("Signed out", { id: "auth-logout" });
+      navigate("/", { replace: true });
+    } catch {
+      notify.error("Couldn't sign you out", { id: "auth-logout" });
+    } finally {
+      setLoggingOut(false);
+      setConfirmOpen(false);
     }
   };
 
-  // Debug: log user object to console
-  console.log('Profile user:', user);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F45B26]"></div>
-      </div>
-    );
-  }
-
+  // The store holds the user payload directly now (it used to hold the whole
+  // response envelope, so this screen read user.data.* and the sidebar read
+  // user.username — one of them was always wrong).
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <User className="w-16 h-16 text-gray-600 mb-4" />
-        <p className="text-gray-400">User not found. Please log in again.</p>
-        <button
-          onClick={() => navigate('/')}
-          className="mt-4 px-4 py-2 bg-[#F45B26] rounded-lg hover:bg-[#F45B26]/80 transition"
-        >
-          Go to Login
-        </button>
-      </div>
+      <EmptyState
+        icon={User}
+        title="You're not signed in"
+        description="Sign in to see your account."
+        action={{ label: "Go to sign in", onClick: () => navigate("/login") }}
+      />
     );
   }
-
-  // Handle both id and _id, createdAt and created_at
-  const userId = user.data.id || user.data._id;
-  const createdAt = user.data.createdAt || user.data.created_at || user.joinedAt;
-  const username = user.data.username || user.data.name;
-  const email = user.data.email;
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button
-        onClick={() => navigate('/')}
-        className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </button>
+      <PageHeader icon={User} title="Profile" subtitle="Your Recallix account" />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Profile</h1>
-        <p className="text-gray-400 mt-1">Manage your account details</p>
-      </div>
+      <div className="bg-surface border border-line rounded-card shadow-card overflow-hidden">
+        <div className="flex items-center gap-4 p-5 border-b border-line">
+          <span className="w-16 h-16 rounded-full bg-accent-soft border border-accent-line flex items-center justify-center text-h1 font-semibold text-accent shrink-0">
+            {(user.username?.[0] ?? "U").toUpperCase()}
+          </span>
 
-      <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-6">
-        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-800">
-          <div className="w-20 h-20 rounded-full bg-[#F45B26]/20 flex items-center justify-center">
-            <User className="w-10 h-10 text-[#F45B26]" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-white">{username}</h2>
-            <p className="text-gray-400">
-              Member since {createdAt ? new Date(createdAt).toLocaleDateString() : 'recently'}
+          <div className="min-w-0">
+            <h2 className="text-h2 font-semibold text-ink truncate">
+              {user.username}
+            </h2>
+            <p className="text-small text-muted">
+              Remembering things since {formatDate(user.createdAt) || "recently"}
             </p>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
-            <Mail className="w-5 h-5 text-[#F45B26]" />
-            <div>
-              <p className="text-xs text-gray-400">Email Address</p>
-              <p className="text-white">{email || 'Not provided'}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
-            <User className="w-5 h-5 text-[#F45B26]" />
-            <div>
-              <p className="text-xs text-gray-400">Username</p>
-              <p className="text-white">{username}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
-            <Calendar className="w-5 h-5 text-[#F45B26]" />
-            <div>
-              <p className="text-xs text-gray-400">User ID</p>
-              <p className="text-white text-sm font-mono">{userId}</p>
-            </div>
-          </div>
+        <div className="grid grid-cols-3 divide-x divide-line border-b border-line">
+          {[
+            { icon: Bookmark, label: "Saved", value: stats.total, view: "library" },
+            {
+              icon: FolderOpen,
+              label: "Collections",
+              value: stats.collections,
+              view: "collections",
+            },
+            { icon: Hash, label: "Tags", value: stats.tags, view: "graph" },
+          ].map((stat) => (
+            <button
+              key={stat.label}
+              type="button"
+              onClick={() => onNavigate(stat.view)}
+              className="p-4 text-center hover:bg-raised transition-colors"
+            >
+              <stat.icon
+                className="w-4 h-4 text-muted mx-auto"
+                aria-hidden="true"
+              />
+              <p className="mt-1.5 text-h2 font-semibold text-ink tabular-nums">
+                {stat.value}
+              </p>
+              <p className="text-caption text-muted">{stat.label}</p>
+            </button>
+          ))}
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-800 flex gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white transition"
-          >
-            Back to Dashboard
-          </button>
-          <button
-            onClick={onLogout}
-            className="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition flex items-center justify-center gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
-        </div>
+        <Row icon={Mail} label="Email" value={user.email} />
+        <Row icon={User} label="Username" value={user.username} />
+        <Row
+          icon={CalendarDays}
+          label="Last save"
+          value={stats.lastSave ? timeAgo(stats.lastSave) : "Nothing saved yet"}
+        />
       </div>
+
+      <div className="mt-5 flex justify-end">
+        <Button
+          variant="dangerGhost"
+          size="md"
+          icon={LogOut}
+          onClick={() => setConfirmOpen(true)}
+        >
+          Sign out
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={onLogout}
+        loading={loggingOut}
+        tone="accent"
+        title="Sign out of Recallix?"
+        message="Everything you saved stays exactly where it is."
+        confirmLabel="Sign out"
+      />
     </div>
   );
 };
