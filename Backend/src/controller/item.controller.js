@@ -1,22 +1,35 @@
+import mongoose from "mongoose";
 import Item from "../models/Item.model.js";
 import { processContent, decideFolder } from "../services/ai.service.js";
 import { detectType } from "../utils/detectType.js";
 import { generateEmbedding } from "../services/embedding.service.js";
 import { cosineSimilarity } from "../utils/similarity.js";
 import { responseMessage } from "../utils/responseMessage.js";
+import { escapeRegex } from "../utils/escapeRegex.js";
+import { normalizeUrl } from "../utils/normalizeUrl.js";
 
 export const createItem = async (req, res) => {
   try {
-    const { url } = req.body;
+    const url = normalizeUrl(req.body.url);
+
     if (!url) {
-      return res.status(400).json({ error: "URL is required" });
+      return responseMessage(res, {
+        status: 400,
+        message: "Enter a valid http or https link",
+        success: false,
+        error: "URL is required",
+      });
     }
 
-    const existingItem = await Item.findOne({ url });
+    const existingItem = await Item.findOne({ url, user: req.user.id });
 
     if (existingItem) {
-      return res.status(400).json({
+      return responseMessage(res, {
+        status: 409,
+        message: "You already saved this link",
+        success: false,
         error: "Item already saved",
+        data: existingItem,
       });
     }
 
@@ -25,11 +38,12 @@ export const createItem = async (req, res) => {
       aiData.folder,
       aiData.title,
       aiData.tags,
+      req.user.id,
     );
     const textForEmbedding = `
-          ${aiData.title}
-          ${aiData.summary}
-          ${aiData.tags.join(" ")}
+          ${aiData.title || ""}
+          ${aiData.summary || ""}
+          ${(aiData.tags || []).join(" ")}
           `;
 
     const embedding = await generateEmbedding(textForEmbedding);
@@ -54,8 +68,23 @@ export const createItem = async (req, res) => {
       data: newItem,
     });
   } catch (error) {
+    // Compound {user, url} unique index — concurrent saves of the same link
+    if (error?.code === 11000) {
+      return responseMessage(res, {
+        status: 409,
+        message: "You already saved this link",
+        success: false,
+        error: "Item already saved",
+      });
+    }
+
     console.error("Create Item Error:", error);
-    res.status(500).json({ error: "Something went wrong" });
+    responseMessage(res, {
+      status: 500,
+      message: "Could not save this link",
+      success: false,
+      error: "Something went wrong",
+    });
   }
 };
 
@@ -63,77 +92,122 @@ export const searchItems = async (req, res) => {
   try {
     const { query } = req.query;
 
-    if (!query) {
-      return res.json([]);
+    if (!query || !query.trim()) {
+      return responseMessage(res, {
+        status: 200,
+        message: "Empty query",
+        success: true,
+        data: [],
+      });
     }
 
-    const items = await Item.find({
-      $or: [
-        { title: { $regex: query, $options: "i" } },
-        { tags: { $regex: query, $options: "i" } },
-        { collection: { $regex: query, $options: "i" } },
-      ],
-    }).sort({ createdAt: -1 });
+    const safe = escapeRegex(query.trim());
 
-    res.json(items);
+    const items = await Item.find({
+      user: req.user.id,
+      $or: [
+        { title: { $regex: safe, $options: "i" } },
+        { summary: { $regex: safe, $options: "i" } },
+        { tags: { $regex: safe, $options: "i" } },
+        { collection: { $regex: safe, $options: "i" } },
+      ],
+    })
+      .select("-embedding")
+      .sort({ createdAt: -1 });
+
+    responseMessage(res, {
+      status: 200,
+      message: "Search completed",
+      success: true,
+      data: items,
+    });
   } catch (error) {
     console.error("Search Error:", error);
-    res.status(500).json({ error: "Search failed" });
+    responseMessage(res, {
+      status: 500,
+      message: "Search failed",
+      success: false,
+      error: "Search failed",
+    });
   }
 };
 
 export const semanticSearch = async (req, res) => {
   try {
     const { query } = req.query;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 8, 20);
 
-    const queryEmbedding = await generateEmbedding(query);
+    if (!query || !query.trim()) {
+      return responseMessage(res, {
+        status: 200,
+        message: "Empty query",
+        success: true,
+        data: [],
+      });
+    }
 
-    const items = await Item.find();
+    const queryEmbedding = await generateEmbedding(query.trim());
 
-    const scoredItems = items.map((item) => {
-      const score = cosineSimilarity(queryEmbedding, item.embedding);
-      return { ...item.toObject(), score };
-    });
+    // generateEmbedding returns [] when the provider fails — cosine would be 0
+    // for every item and the ranking would be meaningless, so say so instead.
+    if (!queryEmbedding.length) {
+      return responseMessage(res, {
+        status: 503,
+        message: "Recall is temporarily unavailable",
+        success: false,
+        error: "Embedding provider unavailable",
+      });
+    }
 
-    scoredItems.sort((a, b) => b.score - a.score);
+    const items = await Item.find({ user: req.user.id });
 
-    const formattedItems = scoredItems.slice(0, 5).map((item) => ({
-      url: item.url,
-      title: item.title,
-      tags: item.tags,
-      collection: item.collection,
-      type: item.type,
-      summary: item.summary,
-    }));
+    const scoredItems = items
+      .map((item) => {
+        const { embedding, ...rest } = item.toObject();
+        return { ...rest, score: cosineSimilarity(queryEmbedding, embedding) };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
 
     responseMessage(res, {
-      status: 201,
-      message: "Item fetch successfully",
+      status: 200,
+      message: "Recall completed",
       success: true,
-      data: formattedItems,
+      data: scoredItems,
     });
-    // res.json(scoredItems.slice(0, 5));
   } catch (error) {
     console.error("Semantic Search Error:", error);
-    res.status(500).json({ error: "Semantic search failed" });
+    responseMessage(res, {
+      status: 500,
+      message: "Recall failed",
+      success: false,
+      error: "Semantic search failed",
+    });
   }
 };
 
 export const getItems = async (req, res) => {
   try {
-    const items = await Item.find({ user: req.user.id }).sort({
-      createdAt: -1,
-    });
+    // embedding is ~1024 floats per item and is never used by the client
+    const items = await Item.find({ user: req.user.id })
+      .select("-embedding")
+      .sort({ createdAt: -1 });
 
     responseMessage(res, {
-      status: 201,
+      status: 200,
       message: "Item fetch successfully",
       success: true,
       data: items,
     });
   } catch (error) {
     console.error("Get Items Error:", error);
-    res.status(500).json({ error: "Failed to fetch items" });
+    responseMessage(res, {
+      status: 500,
+      message: "Failed to fetch items",
+      success: false,
+      error: "Failed to fetch items",
+    });
   }
 };
 
@@ -141,50 +215,77 @@ export const deleteItem = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedItem = await Item.findByIdAndDelete(id);
-
-    if (!deletedItem) {
-      return res.status(404).json({ error: "Item not found" });
+    if (!mongoose.isValidObjectId(id)) {
+      return responseMessage(res, {
+        status: 400,
+        message: "Invalid item id",
+        success: false,
+        error: "Invalid item id",
+      });
     }
 
-    res.json({ message: "Item deleted successfully" });
+    // Scoped by user so one account can never delete another's item
+    const deletedItem = await Item.findOneAndDelete({
+      _id: id,
+      user: req.user.id,
+    });
+
+    if (!deletedItem) {
+      return responseMessage(res, {
+        status: 404,
+        message: "Item not found",
+        success: false,
+        error: "Item not found",
+      });
+    }
+
+    responseMessage(res, {
+      status: 200,
+      message: "Item deleted successfully",
+      success: true,
+      data: { _id: deletedItem._id },
+    });
   } catch (error) {
     console.error("Delete Error:", error);
-    res.status(500).json({ error: "Failed to delete item" });
+    responseMessage(res, {
+      status: 500,
+      message: "Failed to delete item",
+      success: false,
+      error: "Failed to delete item",
+    });
   }
 };
 
 export const getResurfacedItems = async (req, res) => {
   try {
-    const days = parseInt(req.query.days) || 30;
+    const days = parseInt(req.query.days, 10) || 30;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 50);
 
     const date = new Date();
     date.setDate(date.getDate() - days);
 
     const items = await Item.find({
+      user: req.user.id,
       createdAt: { $lte: date },
     })
+      .select("-embedding")
       .sort({ createdAt: 1 })
-      .limit(10);
-
-    const formattedItems = items.map((item) => ({
-      url: item.url,
-      title: item.title,
-      tags: item.tags,
-      collection: item.collection,
-      type: item.type,
-      summary: item.summary,
-    }));
+      .limit(limit);
 
     responseMessage(res, {
-      status: 201,
+      status: 200,
       message: "Item fetch successfully",
       success: true,
-      data: formattedItems,
+      data: items,
     });
   } catch (error) {
     console.error("Resurface Error:", error);
-    res.status(500).json({ error: "Failed to resurface items" });
+    responseMessage(res, {
+      status: 500,
+      message: "Failed to resurface items",
+      success: false,
+      error: "Failed to resurface items",
+    });
   }
 };
 
@@ -192,25 +293,51 @@ export const getRelatedItems = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const currentItem = await Item.findById(id);
+    if (!mongoose.isValidObjectId(id)) {
+      return responseMessage(res, {
+        status: 400,
+        message: "Invalid item id",
+        success: false,
+        error: "Invalid item id",
+      });
+    }
+
+    const currentItem = await Item.findOne({ _id: id, user: req.user.id });
 
     if (!currentItem) {
-      return res.status(404).json({ error: "Item not found" });
+      return responseMessage(res, {
+        status: 404,
+        message: "Item not found",
+        success: false,
+        error: "Item not found",
+      });
     }
 
     const relatedItems = await Item.find({
+      user: req.user.id,
       _id: { $ne: id },
       $or: [
         { tags: { $in: currentItem.tags } },
         { collection: currentItem.collection },
       ],
     })
-      .limit(5)
-      .sort({ createdAt: -1 });
+      .select("-embedding")
+      .sort({ createdAt: -1 })
+      .limit(5);
 
-    res.json(relatedItems);
+    responseMessage(res, {
+      status: 200,
+      message: "Related items fetched successfully",
+      success: true,
+      data: relatedItems,
+    });
   } catch (error) {
     console.error("Related Items Error:", error);
-    res.status(500).json({ error: "Failed to fetch related items" });
+    responseMessage(res, {
+      status: 500,
+      message: "Failed to fetch related items",
+      success: false,
+      error: "Failed to fetch related items",
+    });
   }
 };
