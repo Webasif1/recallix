@@ -40,10 +40,14 @@ export async function register(req, res) {
   responseMessage(res, {
     status: 200,
     message: "User has been created successfully",
+    // Same shape as get-me, including createdAt: the client stores this
+    // response as the session user, and the profile and dashboard both show
+    // a "member since" date that was blank until the next full page load.
     data: {
       id: user._id,
       username: user.username,
       email: user.email,
+      createdAt: user.createdAt,
     },
   });
 }
@@ -95,6 +99,7 @@ export async function login(req, res) {
       id: user._id,
       username: user.username,
       email: user.email,
+      createdAt: user.createdAt,
     },
   });
 }
