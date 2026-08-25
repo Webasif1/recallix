@@ -1,37 +1,35 @@
-import axios from "axios";
+import apiClient from "../../../shared/lib/apiClient";
 
-const API = axios.create({
-  baseURL: "http://localhost:3000",
-  withCredentials:true
-});
+// Auth is cookie-based (httpOnly `token` set by the server); apiClient sends
+// credentials on every request, so no Authorization header is needed here.
 
-// Add Item
-export const createItemAPI = (url, token) => {
-  return API.post(
-    "/api/items",
-    { url },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-};
+/** Save a link. The server scrapes it, tags it with AI and embeds it. */
+export const createItemAPI = (url) => apiClient.post("/api/items", { url });
 
-// Get Items
-export const getItemsAPI = (token) => {
-  return API.get("/api/items", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+/** Every saved item for the signed-in user, newest first. */
+export const getItemsAPI = () => apiClient.get("/api/items");
+
+export const deleteItemAPI = (id) => apiClient.delete(`/api/items/${id}`);
+
+/**
+ * Semantic recall — ranks saved items by embedding similarity, so a vague
+ * memory ("that react performance article") finds the right link even when
+ * none of those words appear in the title.
+ */
+export const semanticSearchAPI = (query, { signal, limit = 8 } = {}) =>
+  apiClient.get("/api/items/semantic-search", {
+    params: { query, limit },
+    signal,
   });
-};
 
-// Delete Item
-export const deleteItemAPI = (id, token) => {
-  return API.delete(`/api/items/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
+/** Literal keyword match across title, summary, tags and collection. */
+export const searchItemsAPI = (query, { signal } = {}) =>
+  apiClient.get("/api/items/search", { params: { query }, signal });
+
+/** Older saves worth revisiting. */
+export const resurfaceAPI = (days = 30, { signal } = {}) =>
+  apiClient.get("/api/items/resurface", { params: { days }, signal });
+
+/** Items sharing tags or a collection with the given item. */
+export const relatedItemsAPI = (id, { signal } = {}) =>
+  apiClient.get(`/api/items/${id}/related`, { signal });

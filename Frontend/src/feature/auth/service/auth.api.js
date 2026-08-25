@@ -1,12 +1,10 @@
-import axios from "axios";
+import apiClient from "../../../shared/lib/apiClient";
 
-const api = axios.create({
-  baseURL: "http://localhost:3000",
-  withCredentials: true,
-});
+// Every endpoint answers { message, success, error, data }.
+// These helpers return the envelope; callers read `.data` for the payload.
 
 export async function register({ username, email, password }) {
-  const response = await api.post("/api/auth/register", {
+  const response = await apiClient.post("/api/auth/register", {
     username,
     email,
     password,
@@ -16,7 +14,7 @@ export async function register({ username, email, password }) {
 }
 
 export async function login({ email, password }) {
-  const response = await api.post("/api/auth/login", {
+  const response = await apiClient.post("/api/auth/login", {
     email,
     password,
   });
@@ -25,13 +23,13 @@ export async function login({ email, password }) {
 }
 
 export async function getMe() {
-  const response = await api.get("/api/auth/get-me");
+  const response = await apiClient.get("/api/auth/get-me");
 
   return response.data;
 }
 
-export async function logout(){
-  const response = await api.get("/api/auth/log-out")
+export async function logout() {
+  const response = await apiClient.get("/api/auth/log-out");
 
-  return response.data
+  return response.data;
 }
