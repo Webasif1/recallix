@@ -9,7 +9,40 @@ const mistralModel = new ChatMistralAI({
   apiKey: process.env.MISTRAL_API_KEY,
 });
 
-const extractTitleFromURL = async (url) => {
+/**
+ * Turn a candidate preview-image src into a usable absolute URL.
+ *
+ * og:image is frequently relative ("/static/hero.png") or protocol-relative,
+ * and occasionally a data: URI we do not want to store in Mongo. Anything that
+ * is not plain http(s) after resolution is rejected.
+ */
+const resolveImage = (src, pageUrl) => {
+  if (!src || typeof src !== "string") return null;
+
+  const trimmed = src.trim();
+  if (!trimmed) return null;
+
+  try {
+    const resolved = new URL(trimmed, pageUrl);
+
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
+      return null;
+    }
+
+    return resolved.toString();
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Fetch a page once and pull out everything we display.
+ *
+ * Previously this only returned the title and discarded the parsed document,
+ * so the preview image had to be scraped again later. Both come out of the
+ * same cheerio pass now — one request, no extra cost.
+ */
+export const scrapePage = async (url) => {
   try {
     const { data } = await axios.get(url, {
       timeout: 8000,
@@ -17,7 +50,9 @@ const extractTitleFromURL = async (url) => {
       // Some sites 403 a bare axios UA
       headers: { "User-Agent": "Mozilla/5.0 (compatible; RecallixBot/1.0)" },
     });
+
     const dom = cheerio.load(data);
+
     let title = dom("title").text().trim();
 
     if (!title) {
@@ -27,16 +62,30 @@ const extractTitleFromURL = async (url) => {
         "Untitled";
     }
 
-    return title.trim();
+    const image =
+      resolveImage(dom("meta[property='og:image']").attr("content"), url) ||
+      resolveImage(
+        dom("meta[property='og:image:secure_url']").attr("content"),
+        url,
+      ) ||
+      resolveImage(dom("meta[name='twitter:image']").attr("content"), url) ||
+      resolveImage(dom("link[rel='image_src']").attr("href"), url) ||
+      null;
+
+    return { title: title.trim(), image };
   } catch (error) {
-    console.error("Title fetch error:", error.message);
-    return "Untitled";
+    console.error("Page fetch error:", error.message);
+    return { title: "Untitled", image: null };
   }
 };
 
 export const processContent = async (url) => {
+  // Scraped OUTSIDE the try below: if the model call fails we still want the
+  // real title and preview image rather than degrading the whole save to
+  // "Untitled" with no thumbnail.
+  const { title, image } = await scrapePage(url);
+
   try {
-    const title = await extractTitleFromURL(url);
 
     const prompt = `
     You are an AI that organizes saved content.
@@ -76,16 +125,18 @@ export const processContent = async (url) => {
       tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
       folder: parsed.folder?.trim() || "General",
       summary: parsed.summary?.trim() || "",
+      image,
     };
   } catch (error) {
     console.error("AI Error:", error.message);
 
-    // Degrade to the scraped title rather than losing the save entirely
+    // Degrade to the scraped metadata rather than losing the save entirely
     return {
-      title: "Untitled",
+      title: title || "Untitled",
       tags: [],
       folder: "General",
       summary: "",
+      image,
     };
   }
 };

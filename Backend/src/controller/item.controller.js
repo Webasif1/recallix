@@ -58,6 +58,7 @@ export const createItem = async (req, res) => {
       collection: finalFolder,
       type: type,
       summary: aiData.summary,
+      image: aiData.image ?? null,
       embedding: embedding,
     });
 

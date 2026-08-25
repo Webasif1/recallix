@@ -32,6 +32,13 @@ const itemSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // Preview image scraped from the page (og:image and friends). Null when
+    // the page has none — the client renders a generated tile in that case,
+    // so never store a placeholder URL here.
+    image: {
+      type: String,
+      default: null,
+    },
     embedding: {
       type: [Number],
       default: [],
