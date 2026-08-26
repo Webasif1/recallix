@@ -10,20 +10,30 @@
  */
 
 @theme {
-  /* ---- Surfaces ---------------------------------------------------- */
-  --color-canvas: #fcfcfd; /* page background */
+  /* ---- Surfaces ----------------------------------------------------
+   * The canvas is a RECESSED grey, not near-white: white cards have to
+   * lift off the page by ground contrast, not by hairline alone.
+   * surface-vs-canvas is 1.13, where the old #fcfcfd managed 1.03.
+   */
+  --color-canvas: #f1f1f3; /* page background */
   --color-surface: #ffffff; /* cards, sidebar, modals */
-  --color-raised: #f6f7f9; /* subtle fills, hover, skeletons */
-  --color-sunken: #f0f1f4; /* inset wells, code, track */
-  --color-line: #e7e8ec; /* hairline borders */
-  --color-line-strong: #d5d7de; /* focused / emphasised borders */
+  --color-raised: #edeef1; /* subtle fills, hover, skeletons */
+  --color-sunken: #e4e5ea; /* inset wells, code, track */
+  --color-line: #e1e2e7; /* hairline borders */
+  --color-line-strong: #cbcdd5; /* focused / emphasised borders */
 
-  /* ---- Text -------------------------------------------------------- */
-  /* Contrast ratios below are measured against --color-canvas. */
-  --color-ink: #12131a; /* headings                 16.5:1 */
-  --color-body: #3f4350; /* body copy                 9.4:1 */
-  --color-muted: #6b7280; /* meta, captions            4.8:1 */
-  --color-faint: #6f7480; /* de-emphasised meta        4.7:1 */
+  /* ---- Text --------------------------------------------------------
+   * Darkening the canvas REDUCES contrast for dark text, so the two grey
+   * text tokens had to move with it — the previous #6b7280 muted drops to
+   * 4.29:1 on this ground, an AA failure on every screen in the app.
+   * Each value below clears 4.5:1 on all three grounds it can land on
+   * (canvas, surface, raised), which is what compressed the muted/faint
+   * step: the greys have less room between the ground and the body copy.
+   */
+  --color-ink: #12131a; /* headings                 16.4:1 */
+  --color-body: #3f4350; /* body copy                 8.7:1 */
+  --color-muted: #5c6270; /* meta, captions            5.4:1 */
+  --color-faint: #646b79; /* de-emphasised meta        4.8:1 */
 
   /* ---- Accent ------------------------------------------------------ */
   /*

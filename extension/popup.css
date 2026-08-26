@@ -1,11 +1,11 @@
 /* Matches the Recallix app design tokens. */
 :root {
-  --canvas: #fcfcfd;
+  --canvas: #f1f1f3;
   --surface: #ffffff;
-  --line: #e7e8ec;
+  --line: #e1e2e7;
   --ink: #12131a;
-  --muted: #6b7280;
-  --faint: #9ca3af;
+  --muted: #5c6270;
+  --faint: #646b79;
   --accent: #4f46e5;
   --accent-hover: #4338ca;
   --success: #0f7b4f;
