@@ -1,5 +1,12 @@
 import { useDispatch } from "react-redux";
-import { register, login, getMe, logout } from "../service/auth.api";
+import {
+  register,
+  login,
+  getMe,
+  logout,
+  updateProfile,
+  changePassword,
+} from "../service/auth.api";
 import {
   setUser,
   setLoading,
@@ -105,10 +112,46 @@ export function useAuth() {
     }
   }
 
+  /**
+   * Edit username / bio / avatar. Only send what changed — the endpoint is a
+   * partial update, so an omitted field is left alone rather than cleared.
+   */
+  async function handleUpdateProfile(changes) {
+    try {
+      dispatch(setError(null));
+
+      const response = await updateProfile(changes);
+      // Refresh the store so the sidebar name and profile update immediately,
+      // without a reload or a second round trip.
+      dispatch(setUser(response.data));
+
+      return response.data;
+    } catch (err) {
+      dispatch(setError(getApiErrorMessage(err, "Couldn't update profile")));
+      throw err;
+    }
+  }
+
+  async function handleChangePassword({ currentPassword, newPassword }) {
+    try {
+      dispatch(setError(null));
+
+      const response = await changePassword({ currentPassword, newPassword });
+      dispatch(setUser(response.data));
+
+      return response.data;
+    } catch (err) {
+      dispatch(setError(getApiErrorMessage(err, "Couldn't change password")));
+      throw err;
+    }
+  }
+
   return {
     handleRegister,
     handleLogin,
     handleGetMe,
     handleLogout,
+    handleUpdateProfile,
+    handleChangePassword,
   };
 }

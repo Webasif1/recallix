@@ -33,3 +33,23 @@ export async function logout() {
 
   return response.data;
 }
+
+/** Partial update — omitted fields are left untouched, not blanked. */
+export async function updateProfile(changes) {
+  const response = await apiClient.patch("/api/auth/me", changes);
+
+  return response.data;
+}
+
+/**
+ * Changing the password signs out every OTHER device; this one is kept in
+ * with a fresh cookie the server sets on the response.
+ */
+export async function changePassword({ currentPassword, newPassword }) {
+  const response = await apiClient.patch("/api/auth/password", {
+    currentPassword,
+    newPassword,
+  });
+
+  return response.data;
+}

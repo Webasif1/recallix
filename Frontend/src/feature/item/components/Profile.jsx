@@ -10,6 +10,8 @@ import {
   FolderOpen,
   Hash,
   Plus,
+  Pencil,
+  KeyRound,
 } from "lucide-react";
 import Button from "../../../shared/ui/Button";
 import ConfirmDialog from "../../../shared/ui/ConfirmDialog";
@@ -19,6 +21,8 @@ import { Skeleton } from "../../../shared/ui/Skeleton";
 import BlobChart from "../../../shared/ui/charts/BlobChart";
 import ActivityCalendar from "./ActivityCalendar";
 import { useAuth } from "../../auth/hook/useAuth";
+import EditProfileDialog from "../../auth/components/EditProfileDialog";
+import ChangePasswordDialog from "../../auth/components/ChangePasswordDialog";
 import notify from "../../../shared/lib/notify";
 import { formatDate, timeAgo } from "../../../shared/lib/formatDate";
 
@@ -28,6 +32,34 @@ const TYPE_LABEL = {
   pdf: "PDFs",
   image: "Images",
   other: "Other",
+};
+
+/**
+ * The avatar is a user-supplied URL (there is no upload backend), so it may
+ * 404 or be blocked. Falling back through state rather than mutating the DOM
+ * keeps React in charge of what is rendered.
+ */
+const Avatar = ({ src, initial }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return (
+      <span className="w-14 h-14 rounded-full bg-accent-soft border border-accent-line flex items-center justify-center text-h1 font-semibold text-accent shrink-0">
+        {initial}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      className="w-14 h-14 rounded-full object-cover border border-line bg-raised shrink-0"
+    />
+  );
 };
 
 const Row = ({ icon: Icon, label, value }) => (
@@ -66,6 +98,8 @@ const Profile = ({ items, listStatus, error, onRetry, onNavigate, onQuickSave })
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   const stats = useMemo(() => {
     const collections = new Set();
@@ -146,17 +180,29 @@ const Profile = ({ items, listStatus, error, onRetry, onNavigate, onQuickSave })
       <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-4 items-start">
         {/* ---- Identity + library mix ---- */}
         <section className="bg-surface border border-line rounded-card shadow-card p-5 sm:p-6">
-          <div className="flex items-center gap-4">
-            <span className="w-14 h-14 rounded-full bg-accent-soft border border-accent-line flex items-center justify-center text-h1 font-semibold text-accent shrink-0">
-              {initial}
-            </span>
+          <div className="flex items-start gap-4">
+            <Avatar src={user.profileImage} initial={initial} />
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h2 className="text-h2 font-semibold text-ink truncate">
                 {user.username}
               </h2>
               <p className="text-small text-muted truncate">{user.email}</p>
+
+              {user.bio && (
+                <p className="mt-2 text-small text-body">{user.bio}</p>
+              )}
             </div>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={Pencil}
+              onClick={() => setEditOpen(true)}
+              className="shrink-0"
+            >
+              <span className="hidden sm:inline">Edit</span>
+            </Button>
           </div>
 
           <div className="mt-5 flex gap-2">
@@ -244,9 +290,42 @@ const Profile = ({ items, listStatus, error, onRetry, onNavigate, onQuickSave })
               label="Last save"
               value={stats.lastSave ? timeAgo(stats.lastSave) : "Nothing yet"}
             />
+
+            <div className="p-4 border-t border-line flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="secondary"
+                size="md"
+                icon={Pencil}
+                onClick={() => setEditOpen(true)}
+                className="flex-1"
+              >
+                Edit profile
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="md"
+                icon={KeyRound}
+                onClick={() => setPasswordOpen(true)}
+                className="flex-1"
+              >
+                Change password
+              </Button>
+            </div>
           </section>
         </div>
       </div>
+
+      <EditProfileDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        user={user}
+      />
+
+      <ChangePasswordDialog
+        open={passwordOpen}
+        onClose={() => setPasswordOpen(false)}
+      />
 
       <ConfirmDialog
         open={confirmOpen}
