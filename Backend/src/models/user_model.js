@@ -3,36 +3,48 @@ import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
+    // NOTE: these were `require:` (misspelled) on every field, which Mongoose
+    // silently ignores — so none of them was actually validated.
     username: {
       type: String,
-      require: [true, "Username is require"],
-      unique: [true, "Username should be unique"],
+      required: [true, "Username is required"],
+      unique: true,
+      trim: true,
     },
     email: {
       type: String,
-      require: [true, "Email is require"],
-      unique: [true, "Email should be unique"],
+      required: [true, "Email is required"],
+      unique: true,
       lowercase: true,
       trim: true,
     },
     password: {
       type: String,
-      require: [true, "Password is require"],
+      required: [true, "Password is required"],
       select: false,
     },
     bio: {
       type: String,
       default: "",
+      maxlength: [280, "Bio must be 280 characters or fewer"],
     },
     profileImage: {
       type: String,
       default: "https://ik.imagekit.io/webasifdotio/user_image.jpg",
     },
+    // Set whenever the password changes. authUser rejects any token issued
+    // before this moment, which is what makes a password change evict
+    // sessions on other devices — a JWT cannot otherwise be recalled.
+    passwordChangedAt: {
+      type: Date,
+    },
   },
   { timestamps: true },
 );
 
-userSchema.pre("save", async function (next) {
+// Async pre-hooks resolve via the returned promise, so there is no next() to
+// call. Hashing lives here so no controller ever handles a raw password.
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
