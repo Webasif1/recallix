@@ -222,7 +222,7 @@ const Profile = ({ items, listStatus, error, onRetry, onNavigate, onQuickSave })
               icon={Hash}
               label="Tags"
               value={stats.tags}
-              onClick={() => onNavigate("graph")}
+              onClick={() => onNavigate("library")}
             />
           </div>
 

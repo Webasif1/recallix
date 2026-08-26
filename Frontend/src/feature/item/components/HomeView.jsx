@@ -320,7 +320,7 @@ const HomeView = ({
               icon={Hash}
               label="Tags"
               value={stats.tags}
-              onClick={() => onNavigate("graph")}
+              onClick={() => onNavigate("library")}
             />
 
             <StatCard

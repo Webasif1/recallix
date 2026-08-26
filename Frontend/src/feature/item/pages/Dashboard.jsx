@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { fetchItems } from "../item.slice";
@@ -12,10 +12,7 @@ import CollectionView from "../components/CollectionView";
 import ResurfacedView from "../components/ResurfacedView";
 import Profile from "../components/Profile";
 import QuickSaveModal from "../components/QuickSaveModal";
-import { LinkGridSkeleton } from "../../../shared/ui/Skeleton";
-
-// The force-graph bundle is large and only one view needs it.
-const GraphView = lazy(() => import("../components/GraphView"));
+import TimelineView from "../components/TimelineView";
 
 const VALID_VIEWS = [
   "home",
@@ -126,12 +123,9 @@ const Dashboard = () => {
         return <ResurfacedView {...shared} />;
       case "profile":
         return <Profile {...shared} />;
+      // Route id stays "graph" so existing ?view=graph links keep working
       case "graph":
-        return (
-          <Suspense fallback={<LinkGridSkeleton count={3} />}>
-            <GraphView {...shared} />
-          </Suspense>
-        );
+        return <TimelineView {...shared} />;
       default:
         return <HomeView {...shared} />;
     }

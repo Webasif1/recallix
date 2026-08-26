@@ -6,7 +6,7 @@ import {
   Sparkle,
   Search,
   Library,
-  Network,
+  CalendarRange,
   Clock,
   FolderOpen,
   ChevronDown,
@@ -27,7 +27,7 @@ const NAV = [
   { id: "recall", label: "Recall", icon: Search },
   { id: "library", label: "Library", icon: Library },
   { id: "collections", label: "Collections", icon: FolderOpen },
-  { id: "graph", label: "Graph", icon: Network },
+  { id: "graph", label: "Timeline", icon: CalendarRange },
   { id: "resurfaced", label: "Resurfaced", icon: Clock },
 ];
 
