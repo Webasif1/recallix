@@ -83,6 +83,16 @@
   --color-chart-5: #15803d;
   --color-chart-other: #9ca3af; /* the aggregate bucket, not an identity */
 
+  /* ---- Data highlight ----------------------------------------------
+   * FILL ONLY. This is the one pairing that is allowed:
+   *     --color-ink (#12131a) ON --color-highlight   -> 17.5:1
+   * Yellow type on a light ground is roughly 1.1:1 — unreadable — so this
+   * token must never reach `color`, only `background`/`fill`, and whatever
+   * sits on it must be ink.
+   */
+  --color-highlight: #e8ff00;
+  --color-highlight-soft: #f7ffb0; /* muted band, still ink-on-top only */
+
   /* ---- Type -------------------------------------------------------- */
   /* System stack: no network request, no font swap flash. */
   --font-sans:
